@@ -307,8 +307,8 @@ install_casa() {
     fi
 
     casa_file="${target_os}-$target_arch-casaos$casa_dl_ext"
-    #casa_tag="$(${net_getter} https://api.github.com/repos/IceWhaleTech/CasaOS/releases/latest | grep -o '"tag_name": ".*"' | sed 's/"//g' | sed 's/tag_name: //g')"
-    casa_url="https://github.com/IceWhaleTech/CasaOS/releases/download/0.1.0/$casa_file"
+    casa_tag="$(${net_getter} https://api.github.com/repos/IceWhaleTech/CasaOS/releases/latest | grep -o '"tag_name": ".*"' | sed 's/"//g' | sed 's/tag_name: //g')"
+    casa_url="https://github.com/IceWhaleTech/CasaOS/releases/download/$casa_tag/$casa_file"
     show 2 "$casa_url"
 
     # Use $PREFIX for compatibility with Termux on Android
