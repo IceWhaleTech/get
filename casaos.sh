@@ -37,7 +37,7 @@ echo '
 # Golbals                                                                     #
 ###############################################################################
 readonly MINIMUM_DISK_SIZE_GB="5"
-readonly MINIMUM_MEMORY="974"
+readonly MINIMUM_MEMORY="400"
 readonly CASA_PATH=/casaOS/server
 
 readonly physical_memory=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
