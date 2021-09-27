@@ -45,7 +45,7 @@ readonly disk_size_bytes=$(LC_ALL=C df --output=size / | tail -n1)
 readonly disk_size_gb=$((${disk_size_bytes} / 1024 / 1024))
 readonly casa_bin="casaos"
 port=80
-
+install_path="/usr/local/bin"
 ###############################################################################
 # Helpers                                                                     #
 ###############################################################################
@@ -181,7 +181,7 @@ gen_service() {
 				Restart=always
 				RestartSec=1
 				User=root
-				ExecStart=$casa_bin -c $CASA_PATH/conf/conf.ini
+				ExecStart=$install_path/$casa_bin -c $CASA_PATH/conf/conf.ini
 
 				[Install]
 				WantedBy=multi-user.target
@@ -233,7 +233,6 @@ install_casa() {
     trap 'show 1 "error $? in command: $BASH_COMMAND"; trap ERR; return 1' ERR
     target_os="unsupported"
     target_arch="unknown"
-    install_path="/usr/local/bin"
 
     # Fall back to /usr/bin if necessary
     if [[ ! -d $install_path ]]; then
