@@ -170,6 +170,8 @@ create_directory() {
 #Create Service And Start Service
 gen_service() {
     ((EUID)) && sudo_cmd="sudo"
+    show 2 "Try stop CasaOS system service."
+    $sudo_cmd systemctl stop casaos.service # Stop before generation
     show 2 "Create system service for CasaOS."
     $sudo_cmd tee $1 >/dev/null <<EOF
 				[Unit]
