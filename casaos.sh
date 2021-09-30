@@ -343,6 +343,7 @@ install_casa() {
     fi
 
     $sudo_cmd mv -f "$PREFIX/tmp/$casa_tmp_folder/"* "$CASA_PATH/"
+    $sudo_cmd mv -f "$casa_conf_path/conf.ini.sample" "$casa_conf_path/conf.ini"
 
     # remove tmp files
     $sudo_cmd rm -rf $PREFIX/tmp/$casa_tmp_folder
