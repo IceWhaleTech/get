@@ -335,16 +335,18 @@ install_casa() {
     #check conf and shell folder
     local casa_conf_path=$CASA_PATH/conf
     local casa_shell_path=$CASA_PATH/shell
-    if [[ -d $casa_conf_path ]]; then
-        $sudo_cmd rm -rf $casa_conf_path
-    fi
+    #if [[ -d $casa_conf_path ]]; then
+    #    $sudo_cmd rm -rf $casa_conf_path
+    #fi
 
     if [[ -d $casa_shell_path ]]; then
         $sudo_cmd rm -rf $casa_shell_path
     fi
 
     $sudo_cmd mv -f "$PREFIX/tmp/$casa_tmp_folder/"* "$CASA_PATH/"
-    $sudo_cmd mv -f "$casa_conf_path/conf.ini.sample" "$casa_conf_path/conf.ini"
+    if [ ! -f "$casa_conf_path/conf.ini" ]; then
+	$sudo_cmd mv -f "$casa_conf_path/conf.ini.sample" "$casa_conf_path/conf.ini"
+    fi
 
     # remove tmp files
     $sudo_cmd rm -rf $PREFIX/tmp/$casa_tmp_folder
