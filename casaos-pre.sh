@@ -47,6 +47,14 @@ readonly disk_size_gb=$((${disk_size_bytes} / 1024 / 1024))
 readonly casa_bin="casaos"
 port=80
 install_path="/usr/local/bin"
+
+service_path=/usr/lib/systemd/system/casaos.service
+if [ ! -d "/usr/lib/systemd/system" ]; then
+    service_path=/lib/systemd/system/casaos.service
+    if [ ! -d "/lib/systemd/system" ]; then
+        service_path=/etc/systemd/system/casaos.service
+    fi
+fi
 ###############################################################################
 # Helpers                                                                     #
 ###############################################################################
@@ -136,17 +144,21 @@ if [[ "${disk_size_gb}" -lt "${MINIMUM_DISK_SIZE_GB}" ]]; then
 fi
 
 #Check and install curl
-packagesNeeded='curl'
-if [ -x "$(command -v apk)" ]; then
-	sudo apk add --no-cache $packagesNeeded
-elif [ -x "$(command -v apt-get)" ]; then 
-	sudo apt-get install $packagesNeeded
-elif [ -x "$(command -v dnf)" ]; then 
-	sudo dnf install $packagesNeeded
-elif [ -x "$(command -v zypper)" ]; then 
-	sudo zypper install $packagesNeeded
-else 
-	show 1 "Package manager not found. You must manually install: $packagesNeeded"
+
+if [[ ! -x "$(command -v curl)" ]]; then
+    show 2 "curl is a necessary dependency, try to install it."
+    packagesNeeded='curl'
+    if [ -x "$(command -v apk)" ]; then
+        sudo apk add --no-cache $packagesNeeded
+    elif [ -x "$(command -v apt-get)" ]; then
+        sudo apt-get -y -q install $packagesNeeded
+    elif [ -x "$(command -v dnf)" ]; then
+        sudo dnf install $packagesNeeded
+    elif [ -x "$(command -v zypper)" ]; then
+        sudo zypper install $packagesNeeded
+    else
+        show 1 "Package manager not found. You must manually install: $packagesNeeded"
+    fi
 fi
 
 #Check Docker
@@ -186,8 +198,11 @@ create_directory() {
 #Create Service And Start Service
 gen_service() {
     ((EUID)) && sudo_cmd="sudo"
-    show 2 "Try stop CasaOS system service."
-    $sudo_cmd systemctl stop casaos.service # Stop before generation
+    if [ -f $service_path ]; then
+        show 2 "Try stop CasaOS system service."
+        $sudo_cmd systemctl stop casaos.service # Stop before generation
+    fi
+
     show 2 "Create system service for CasaOS."
     $sudo_cmd tee $1 >/dev/null <<EOF
 				[Unit]
@@ -359,10 +374,11 @@ install_casa() {
     fi
 
     $sudo_cmd mv -f "$PREFIX/tmp/$casa_tmp_folder/shell" "$CASA_PATH/"
-    
+
     if [ ! -f "$casa_conf_path/conf.ini" ]; then
-    	$sudo_cmd mv -f "$PREFIX/tmp/$casa_tmp_folder/conf/"* "$CASA_PATH/conf/"
-	$sudo_cmd mv -f "$casa_conf_path/conf.ini.sample" "$casa_conf_path/conf.ini"
+        $sudo_cmd mkdir -p $casa_conf_path
+        $sudo_cmd mv -f "$PREFIX/tmp/$casa_tmp_folder/conf/"* "$CASA_PATH/conf/"
+        $sudo_cmd mv -f "$casa_conf_path/conf.ini.sample" "$casa_conf_path/conf.ini"
     fi
 
     # remove tmp files
@@ -371,14 +387,7 @@ install_casa() {
     if type -p $casa_bin >/dev/null 2>&1; then
         show 0 "CasaOS Successfully installed."
         trap ERR
-        systemd_folder=/usr/lib/systemd/system/casaos.service
-        if [ ! -d "/usr/lib/systemd/system" ]; then
-            systemd_folder=/lib/systemd/system/casaos.service
-            if [ ! -d "/lib/systemd/system" ]; then
-                systemd_folder=/etc/systemd/system/casaos.service
-            fi
-        fi
-        gen_service $systemd_folder
+        gen_service $service_path
         return 0
     else
         show 1 "Something went wrong, CasaOS is not in your path"
