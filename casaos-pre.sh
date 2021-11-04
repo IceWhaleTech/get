@@ -135,7 +135,16 @@ if [[ "${disk_size_gb}" -lt "${MINIMUM_DISK_SIZE_GB}" ]]; then
     exit 1
 fi
 
+#Check and install curl
+packagesNeeded='curl'
+if [ -x "$(command -v apk)" ];       then sudo apk add --no-cache $packagesNeeded
+elif [ -x "$(command -v apt-get)" ]; then sudo apt-get install $packagesNeeded
+elif [ -x "$(command -v dnf)" ];     then sudo dnf install $packagesNeeded
+elif [ -x "$(command -v zypper)" ];  then sudo zypper install $packagesNeeded
+else show 1 "Package manager not found. You must manually install: $packagesNeeded" fi
+
 #Check Docker
+
 if [[ -x "$(command -v docker)" ]]; then
     show 0 "Docker already installed."
 else
