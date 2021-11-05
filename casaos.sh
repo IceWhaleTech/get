@@ -242,6 +242,7 @@ EOF
     PIDS=$(ps -ef | grep casaos | grep -v grep | awk '{print $2}')
     if [[ "$PIDS" != "" ]]; then
         echo " "
+        echo "==============================================================="
         echo " "
         echo "  CasaOS running at:"
         if [[ "$port" -eq "80" ]]; then
@@ -250,6 +251,7 @@ EOF
             echo "  http://$(get_ipaddr):$port"
         fi
         echo " "
+        echo "==============================================================="
         echo " "
     else
         show 1 "CasaOS start failed."

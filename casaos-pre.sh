@@ -40,6 +40,8 @@ echo '
 readonly MINIMUM_DISK_SIZE_GB="5"
 readonly MINIMUM_MEMORY="400"
 readonly CASA_PATH=/casaOS/server
+readonly CASA_LOGS_PATH=/casaOS/logs/server
+readonly CASA_SHELL_PATH=/casaOS/util/shell
 
 readonly physical_memory=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
 readonly disk_size_bytes=$(LC_ALL=C df --output=size / | tail -n1)
@@ -184,15 +186,17 @@ else
     fi
 fi
 
+#Pull Syncthing image from dockerhub
+show 2 "Start downloading the necessary components of the system."
+docker pull linuxserver/syncthing >/dev/null 2>&1
+#docker pull linuxserver/syncthing
+
 #Create CasaOS directory
 create_directory() {
     ((EUID)) && sudo_cmd="sudo"
-    #mkdir /casaOS
-    #mkdir /casaOS/server
-    #mkdir /casaOS/server/user
     $sudo_cmd mkdir -p $CASA_PATH
-    $sudo_cmd mkdir -p /casaOS/logs/server
-    $sudo_cmd mkdir -p /casaOS/util/shell
+    $sudo_cmd mkdir -p $CASA_LOGS_PATH
+    $sudo_cmd mkdir -p $CASA_SHELL_PATH
 }
 
 #Create Service And Start Service
@@ -245,6 +249,7 @@ EOF
     PIDS=$(ps -ef | grep casaos | grep -v grep | awk '{print $2}')
     if [[ "$PIDS" != "" ]]; then
         echo " "
+        echo "==============================================================="
         echo " "
         echo "  CasaOS running at:"
         if [[ "$port" -eq "80" ]]; then
@@ -253,6 +258,7 @@ EOF
             echo "  http://$(get_ipaddr):$port"
         fi
         echo " "
+        echo "==============================================================="
         echo " "
     else
         show 1 "CasaOS start failed."
@@ -398,3 +404,4 @@ install_casa() {
 
 create_directory
 install_casa
+
