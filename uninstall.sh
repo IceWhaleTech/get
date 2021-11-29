@@ -211,43 +211,4 @@ remove_serveice $service_path $install_path/casaos
 # delete casaos directory
 remove_directory
 
-
-#Is delete docker
-read -r -p "Are You Sure Delete Docker? [Y/n] " input
-
-case $input in
-    [yY][eE][sS]|[yY])
-        show 0 "start remove DATA directory"
-        remove_DATA_directory
-		;;
-
-    [nN][oO]|[nN])
-		show 1 "jump delete docker"
-       	;;
-           
-    *)
-		show 2 "jump delete docker"
-		;;
-esac
-
-#is delete data
-
-read -r -p "This directory contains application data, please operate with caution. Are You Sure Remove DATA Directory? [Y/n] " input
-
-case $input in
-    [yY][eE][sS]|[yY])
-        show 0 "start remove DATA directory"
-        remove_DATA_directory
-		;;
-
-    [nN][oO]|[nN])
-		show 1 "jump remove DATA directory"
-       	;;
-
-    *)
-		show 2 "jump remove DATA directory"
-		exit 1
-		;;
-esac
-
-show 0 "Uninstall succeed"
+show 0 "Uninstall succeed! \n The '/DATA' directory and docker need to be uninstalled manually "
