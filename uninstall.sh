@@ -144,67 +144,6 @@ remove_serveice(){
     $sudo_cmd rm $2
 }
 
-#######################################
-# Custom Get Distribution function
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   string
-#######################################
-get_distribution() {
-	lsb_dist=""
-	# Every system that we officially support has /etc/os-release
-	if [ -r /etc/os-release ]; then
-		lsb_dist="$(. /etc/os-release && echo "$ID")"
-	fi
-	# Returning an empty string here should be alright since the
-	# case statements don't act unless you provide an actual value
-	echo "$lsb_dist"
-}
-
-#######################################
-# Custom uninstall docker function
-# Globals:
-#   None
-# Arguments:
-#   None
-# Returns:
-#   string
-#######################################
-unistall_docker(){
-     ((EUID)) && sudo_cmd="sudo"
-    lsb_dist=$( get_distribution )
-	lsb_dist="$(echo "$lsb_dist" | tr '[:upper:]' '[:lower:]')"
-
-    $sudo_cmd systemctl disable docker
-    $sudo_cmd systemctl stop docker
-
-    case "$lsb_dist" in
-
-		ubuntu)
-			$sudo_cmd apt-get purge docker-ce
-            $sudo_cmd rm -rf /var/lib/docker
-		;;
-
-		debian|raspbian)
-			$sudo_cmd apt-get purge docker-ce
-		;;
-
-		centos|rhel|sles)
-			yum remove docker-ce
-            rm -rf /var/lib/docker
-		;;
-
-		*)
-			
-		;;
-
-	esac
-
-}
-
 # delete casaos serveice and casaos
 remove_serveice $service_path $install_path/casaos
 
