@@ -212,3 +212,4 @@ remove_serveice $service_path $install_path/casaos
 remove_directory
 
 show 0 "Uninstall succeed! \n The '/DATA' directory and docker need to be uninstalled manually "
+
