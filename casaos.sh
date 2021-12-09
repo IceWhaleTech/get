@@ -44,6 +44,9 @@ readonly physical_memory=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
 readonly disk_size_bytes=$(LC_ALL=C df --output=size / | tail -n1)
 readonly disk_size_gb=$((${disk_size_bytes} / 1024 / 1024))
 readonly casa_bin="casaos"
+readonly casa_tmp_folder="casaos"
+
+
 port=80
 install_path="/usr/local/bin"
 service_path=/usr/lib/systemd/system/casaos.service
@@ -260,6 +263,16 @@ EOF
     #$sudo_cmd systemctl status casaos
 }
 
+#install addon scripts
+
+install_addons() {
+    ((EUID)) && sudo_cmd="sudo"
+    show 2 "Installing CasaOS Addons"
+    $sudo_cmd cp -rf "$PREFIX/tmp/$casa_tmp_folder/shell/11-usb-mount.rules" "/etc/udev/rules.d/"
+    $sudo_cmd chmod +x /casaOS/util/shell/usb-mount.sh
+    $sudo_cmd cp -rf "$PREFIX/tmp/$casa_tmp_folder/shell/usb-mount@.service" "/etc/systemd/system/"
+}
+
 #install Casa
 install_casa() {
     trap 'show 1 "error $? in command: $BASH_COMMAND"; trap ERR; return 1' ERR
@@ -277,7 +290,7 @@ install_casa() {
     #########################
     # Which OS and version? #
     #########################
-    casa_tmp_folder="casaos"
+    
 
     casa_dl_ext=".tar.gz"
 
@@ -379,6 +392,8 @@ install_casa() {
         $sudo_cmd mv -f "$PREFIX/tmp/$casa_tmp_folder/conf/"* "$CASA_PATH/conf/"
         $sudo_cmd mv -f "$casa_conf_path/conf.ini.sample" "$casa_conf_path/conf.ini"
     fi
+
+    install_addons
 
     # remove tmp files
     $sudo_cmd rm -rf $PREFIX/tmp/$casa_tmp_folder
