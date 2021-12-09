@@ -385,7 +385,7 @@ install_casa() {
         $sudo_cmd rm -rf $casa_shell_path
     fi
 
-    $sudo_cmd mv -f "$PREFIX/tmp/$casa_tmp_folder/shell" "$CASA_PATH/"
+    $sudo_cmd cp -rf "$PREFIX/tmp/$casa_tmp_folder/shell" "$CASA_PATH/"
 
     if [ ! -f "$casa_conf_path/conf.ini" ]; then
         $sudo_cmd mkdir -p $casa_conf_path
