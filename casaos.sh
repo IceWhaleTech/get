@@ -269,7 +269,7 @@ install_addons() {
     ((EUID)) && sudo_cmd="sudo"
     show 2 "Installing CasaOS Addons"
     $sudo_cmd cp -rf "$PREFIX/tmp/$casa_tmp_folder/shell/11-usb-mount.rules" "/etc/udev/rules.d/"
-    $sudo_cmd chmod +x /casaOS/util/shell/usb-mount.sh
+    $sudo_cmd chmod +x /casaOS/server/shell/usb-mount.sh
     $sudo_cmd cp -rf "$PREFIX/tmp/$casa_tmp_folder/shell/usb-mount@.service" "/etc/systemd/system/"
 }
 
