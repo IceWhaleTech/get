@@ -211,6 +211,7 @@ gen_service() {
 
 				[Service]
 				Type=simple
+				LimitNOFILE=15210
 				Restart=always
 				RestartSec=1
 				User=root
