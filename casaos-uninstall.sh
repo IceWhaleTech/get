@@ -22,19 +22,16 @@
 
 clear
 
-echo '
-  ________                  .___ __________               
- /  _____/  ____   ____   __| _/ \______   \___.__. ____  
-/   \  ___ /  _ \ /  _ \ / __ |   |    |  _<   |  |/ __ \ 
-\    \_\  (  <_> |  <_> ) /_/ |   |    |   \\___  \  ___/ 
- \______  /\____/ \____/\____ |   |______  // ____|\___  >
-        \/                   \/          \/ \/         \/ 
-
-'
-
 ###############################################################################
 # Golbals                                                                     #
 ###############################################################################
+
+UNSTALL_DOCKER=false
+REMOVE_CASAOS_FILES=false
+REMOVE_CASAOS_CONTAINERS=false
+
+readonly TITLE="CasaOS Uninstaller"
+
 readonly CASA_PATH=/casaOS/server
 
 readonly casa_bin="casaos"
@@ -50,6 +47,105 @@ fi
 ###############################################################################
 # Helpers                                                                     #
 ###############################################################################
+
+#######################################
+# Check and install whiptail function
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+
+install_whiptail() {
+
+    if [ -x "$(command -v whiptail)" ]; then
+        echo ""
+    else
+        if [[ -r /etc/os-release ]]; then
+            lsb_dist="$(. /etc/os-release && echo "$ID")"
+        fi
+        if [[ $lsb_dist == "openwrt" ]]; then
+            opkg update
+            opkg install whiptail
+            #exit 1
+        elif [[ $lsb_dist == "debian" ]] || [[ $lsb_dist == "ubuntu" ]] || [[ $lsb_dist == "raspbian" ]]; then
+            ((EUID)) && sudo_cmd="sudo"
+            $sudo_cmd apt -y update
+            $sudo_cmd apt -y install whiptail
+        elif [[ $lsb_dist == "centos" ]]; then
+            yum update
+            yum install newt
+        fi
+    fi
+}
+
+#######################################
+# Uninstall Docker
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+
+uninstall_docker() {
+    if [[ $UNSTALL_DOCKER = true ]]; then
+        ((EUID)) && sudo_cmd="sudo"
+        $sudo_cmd apt-get purge -y docker-engine docker docker.io docker-ce docker-ce-cli docker-ce-rootless-extras docker-scan-plugin
+        $sudo_cmd apt-get autoremove -y --purge docker-engine docker docker.io docker-ce docker-ce-cli docker-ce-rootless-extras docker-scan-plugin
+
+        $sudo_cmd rm -rf /var/lib/docker /etc/docker
+        $sudo_cmd rm /etc/apparmor.d/docker
+        $sudo_cmd groupdel docker
+        $sudo_cmd rm -rf /var/run/docker.sock
+    fi
+}
+
+#######################################
+# Uninstall CasaOS
+# Globals:
+#   None
+# Arguments:
+#   None
+# Returns:
+#   None
+#######################################
+
+uninstall_casaos() {
+    ((EUID)) && sudo_cmd="sudo"
+
+    #stop and remove casaos service
+    remove_serveice $service_path $install_path/casaos
+
+    #remove casa containers
+    if [[ $REMOVE_CASAOS_CONTAINERS = true ]]; then
+        #stop all casaos‘s containers
+        official_containers=$($sudo_cmd docker ps -a -q -f "label=origin=official")
+        $sudo_cmd docker stop $official_containers
+        $sudo_cmd docker rm $official_containers
+
+        custom_containers=$($sudo_cmd docker ps -a -q -f "label=origin=custom")
+        $sudo_cmd docker stop $custom_containers
+        $sudo_cmd docker rm $custom_containers
+
+        system_containers=$($sudo_cmd docker ps -a -q -f "label=origin=system")
+        $sudo_cmd docker stop $system_containers
+        $sudo_cmd docker rm $system_containers
+
+        #remove all unuse images
+        $sudo_cmd docker image prune -f
+
+    fi
+
+    #remove casa files
+    if [[ $REMOVE_CASAOS_FILES = true ]]; then
+        $sudo_cmd rm -fr /casaOS
+    fi
+
+}
 
 #######################################
 # Custom printing function
@@ -106,7 +202,7 @@ show() {
 #######################################
 remove_directory() {
     ((EUID)) && sudo_cmd="sudo"
-   $sudo_cmd rm -fr /casaOS 
+    $sudo_cmd rm -fr /casaOS
 }
 
 #######################################
@@ -120,9 +216,8 @@ remove_directory() {
 #######################################
 remove_DATA_directory() {
     ((EUID)) && sudo_cmd="sudo"
-   $sudo_cmd rm -fr /DATA 
+    $sudo_cmd rm -fr /DATA
 }
-
 
 #######################################
 # Custom remove casaos function
@@ -133,9 +228,9 @@ remove_DATA_directory() {
 # Returns:
 #   None
 #######################################
-remove_serveice(){
-   ((EUID)) && sudo_cmd="sudo"
-    $sudo_cmd  systemctl disable casaos
+remove_serveice() {
+    ((EUID)) && sudo_cmd="sudo"
+    $sudo_cmd systemctl disable casaos
     if [ -f $service_path ]; then
         show 2 "Try stop CasaOS system service."
         $sudo_cmd systemctl stop casaos.service # Stop before generation
@@ -144,11 +239,22 @@ remove_serveice(){
     $sudo_cmd rm $2
 }
 
-# delete casaos serveice and casaos
-remove_serveice $service_path $install_path/casaos
+install_whiptail
 
-# delete casaos directory
-remove_directory
+if (whiptail --title "${TITLE}" --yesno --defaultno "Do you want uninstall docker?" 10 60); then
+    UNSTALL_DOCKER=true
+else
+    if (whiptail --title "${TITLE}" --yesno --defaultno "Do you want remove all containers of CasaOS?" 10 60); then
+        REMOVE_CASAOS_CONTAINERS=true
+    fi
+fi
 
-show 0 "Uninstall succeed! \n The '/DATA' directory and docker need to be uninstalled manually "
+if (whiptail --title "${TITLE}" --yesno --defaultno "Do you want remove all files of CasaOS?" 10 60); then
+    REMOVE_CASAOS_FILES=true
+fi
 
+uninstall_docker
+
+uninstall_casaos
+
+whiptail --title "${TITLE}" --msgbox " Uninstall succeed! \n The '/DATA' directory and docker need to be uninstalled manually." 10 60
