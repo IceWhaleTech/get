@@ -39,9 +39,10 @@ echo '
 readonly MINIMUM_DISK_SIZE_GB="5"
 readonly MINIMUM_MEMORY="400"
 readonly CASA_PATH=/casaOS/server
+readonly CASA_DEPANDS="curl smartmontools"
 
 readonly physical_memory=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
-readonly disk_size_bytes=$(LC_ALL=C df --output=size / | tail -n1)
+readonly disk_size_bytes=$(LC_ALL=C df -P / | tail -n 1 | awk '{print $4}')
 readonly disk_size_gb=$((${disk_size_bytes} / 1024 / 1024))
 readonly casa_bin="casaos"
 readonly casa_tmp_folder="casaos"
@@ -60,6 +61,16 @@ fi
 ###############################################################################
 # Helpers                                                                     #
 ###############################################################################
+
+usage() {
+    cat <<-EOF
+		Usage: casaos.sh [options]
+		Valid options are:
+		    -v <version>            Specify version to install For example: casaos.sh -v v0.2.3 | casaos.sh -v pre | casaos.sh
+		    -h                      show this help message and exit
+	EOF
+    exit $1
+}
 
 #######################################
 # Custom printing function
@@ -145,45 +156,49 @@ if [[ "${disk_size_gb}" -lt "${MINIMUM_DISK_SIZE_GB}" ]]; then
     exit 1
 fi
 
-#Check and install curl
-
-if [[ ! -x "$(command -v curl)" ]]; then
-    show 2 "curl is a necessary dependency, try to install it."
-    packagesNeeded='curl'
-    if [ -x "$(command -v apk)" ]; then
-        sudo apk add --no-cache $packagesNeeded
-    elif [ -x "$(command -v apt-get)" ]; then
-        sudo apt-get -y -q install $packagesNeeded
-    elif [ -x "$(command -v dnf)" ]; then
-        sudo dnf install $packagesNeeded
-    elif [ -x "$(command -v zypper)" ]; then
-        sudo zypper install $packagesNeeded
-    else
-        show 1 "Package manager not found. You must manually install: $packagesNeeded"
-    fi
-fi
-
 #Check Docker
-if [[ -x "$(command -v docker)" ]]; then
-    show 0 "Docker already installed."
-else
-    if [[ -r /etc/os-release ]]; then
-        lsb_dist="$(. /etc/os-release && echo "$ID")"
-    fi
-    if [[ $lsb_dist == "openwrt" ]]; then
-        show 1 "Openwrt, Please install docker manually."
-        exit 1
+install_docker() {
+    if [[ -x "$(command -v docker)" ]]; then
+        show 0 "Docker already installed."
     else
-        show 0 "Docker will be installed automatically."
-        curl -fsSL https://get.docker.com | bash
-        if [ $? -ne 0 ]; then
-            show 1 "Installation failed, please try again."
+        if [[ -r /etc/os-release ]]; then
+            lsb_dist="$(. /etc/os-release && echo "$ID")"
+        fi
+        if [[ $lsb_dist == "openwrt" ]]; then
+            show 1 "Openwrt, Please install docker manually."
             exit 1
         else
-            show 0 "Docker Successfully installed."
+            show 0 "Docker will be installed automatically."
+            curl -fsSL https://get.docker.com | bash
+            if [ $? -ne 0 ]; then
+                show 1 "Installation failed, please try again."
+                exit 1
+            else
+                show 0 "Docker Successfully installed."
+            fi
         fi
     fi
-fi
+}
+
+#Install Depends
+install_depends() {
+    ((EUID)) && sudo_cmd="sudo"
+    if [[ ! -x "$(command -v '$1')" ]]; then
+        show 2 "Install the necessary dependencies: $1"
+        packagesNeeded=$1
+        if [ -x "$(command -v apk)" ]; then
+            $sudo_cmd apk add --no-cache $packagesNeeded
+        elif [ -x "$(command -v apt-get)" ]; then
+            $sudo_cmd apt-get -y -q install $packagesNeeded
+        elif [ -x "$(command -v dnf)" ]; then
+            $sudo_cmd dnf install $packagesNeeded
+        elif [ -x "$(command -v zypper)" ]; then
+            $sudo_cmd zypper install $packagesNeeded
+        else
+            show 1 "Package manager not found. You must manually install: $packagesNeeded"
+        fi
+    fi
+}
 
 #Create CasaOS directory
 create_directory() {
@@ -255,6 +270,8 @@ EOF
             echo "  http://$(get_ipaddr):$port"
         fi
         echo " "
+        echo "  Open your browser and visit the above address."
+        echo " "
         echo "==============================================================="
         echo " "
     else
@@ -291,7 +308,6 @@ install_casa() {
     #########################
     # Which OS and version? #
     #########################
-    
 
     casa_dl_ext=".tar.gz"
 
@@ -353,7 +369,13 @@ install_casa() {
     fi
 
     casa_file="${target_os}-$target_arch-casaos$casa_dl_ext"
-    casa_tag="$(${net_getter} https://api.github.com/repos/IceWhaleTech/CasaOS/releases/latest | grep -o '"tag_name": ".*"' | sed 's/"//g' | sed 's/tag_name: //g')"
+    if [[ ! -n "$version" ]]; then
+        casa_tag="$(${net_getter} https://api.github.com/repos/IceWhaleTech/CasaOS/releases/latest | grep -o '"tag_name": ".*"' | sed 's/"//g' | sed 's/tag_name: //g')"
+    elif [[ $version == "pre" ]]; then
+        casa_tag="$(${net_getter} https://api.github.com/repos/IceWhaleTech/CasaOS/releases | grep -o '"tag_name": ".*"' | sed 's/"//g' | sed 's/tag_name: //g' | sed -n '1p')"
+    else
+        casa_tag="$version"
+    fi
     casa_url="https://github.com/IceWhaleTech/CasaOS/releases/download/$casa_tag/$casa_file"
     show 2 "$casa_url"
 
@@ -411,5 +433,18 @@ install_casa() {
     fi
 }
 
+while getopts ":v:h" arg; do
+    case "$arg" in
+    v)
+        version=$OPTARG
+        ;;
+    h)
+        usage 0
+        ;;
+    esac
+done
+
 create_directory
+install_depends "$CASA_DEPANDS"
+install_docker
 install_casa
