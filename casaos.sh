@@ -39,7 +39,7 @@ echo '
 readonly MINIMUM_DISK_SIZE_GB="5"
 readonly MINIMUM_MEMORY="400"
 readonly CASA_PATH=/casaOS/server
-readonly CASA_DEPANDS="curl smartmontools"
+readonly CASA_DEPANDS="curl smartmontools parted"
 
 readonly physical_memory=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
 readonly disk_size_bytes=$(LC_ALL=C df -P / | tail -n 1 | awk '{print $4}')
