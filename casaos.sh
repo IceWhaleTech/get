@@ -194,6 +194,12 @@ install_depends() {
             $sudo_cmd dnf install $packagesNeeded
         elif [ -x "$(command -v zypper)" ]; then
             $sudo_cmd zypper install $packagesNeeded
+        elif [ -x "$(command -v yum)" ]; then
+            $sudo_cmd yum install $packagesNeeded
+        elif [ -x "$(command -v pacman)" ]; then
+            $sudo_cmd pacman -S $packagesNeeded
+        elif [ -x "$(command -v paru)" ]; then
+            $sudo_cmd paru -S $packagesNeeded
         else
             show 1 "Package manager not found. You must manually install: $packagesNeeded"
         fi
