@@ -3,7 +3,7 @@
  # @Author:  LinkLeong link@icewhale.com
  # @Date: 2022-06-30 10:08:33
  # @LastEditors: a624669980@163.com a624669980@163.com
- # @LastEditTime: 2022-06-30 10:11:45
+ # @LastEditTime: 2022-06-30 18:23:55
  # @FilePath: /get/upload.sh
  # @Description:
 ### 
@@ -73,50 +73,6 @@ Show() {
 
 Warn() {
     echo -e "${aCOLOUR[3]}$1$COLOUR_RESET"
-}
-
-# 0 Check_exist
-Check_Exist() {
-    #Create Dir
-    Show 2 "Create Folders."
-    ${sudo_cmd} mkdir -p ${CASA_HELPER_PATH}
-    ${sudo_cmd} mkdir -p ${CASA_LOGS_PATH}
-    ${sudo_cmd} mkdir -p ${CASA_USER_CONF_PATH}
-    ${sudo_cmd} mkdir -p ${CASA_DB_PATH}
-    ${sudo_cmd} mkdir -p ${CASA_TEMP_PATH}
-
-    if [[ $(systemctl is-active ${CASA_BIN}) == "active" ]]; then
-        ${sudo_cmd} systemctl stop ${CASA_BIN}
-        ${sudo_cmd} systemctl disable ${CASA_BIN}
-    fi
-    Show 2 "Start cleaning up the old version."
-    if [[ -f "/usr/lib/systemd/system/casaos.service" ]]; then
-        ${sudo_cmd} rm -rf /usr/lib/systemd/system/casaos.service
-    fi
-
-    if [[ -f "/lib/systemd/system/casaos.service" ]]; then
-        ${sudo_cmd} rm -rf /lib/systemd/system/casaos.service
-    fi
-
-    if [[ -f "/usr/local/bin/${CASA_BIN}" ]]; then
-        ${sudo_cmd} rm -rf /usr/local/bin/${CASA_BIN}
-    fi
-
-    if [[ -f "/casaOS/server/conf/conf.ini" ]]; then
-        ${sudo_cmd} cp -rf /casaOS/server/conf/conf.ini ${CASA_CONF_PATH}
-        ${sudo_cmd} cp -rf /casaOS/server/conf/*.json ${CASA_USER_CONF_PATH}
-    fi
-
-    if [[ -d "/casaOS/server/db" ]]; then
-        ${sudo_cmd} cp -rf /casaOS/server/db/* ${CASA_DB_PATH}
-    fi
-
-    #Clean
-    if [[ -d "/casaOS" ]]; then
-        ${sudo_cmd} rm -rf /casaOS
-    fi
-    Show 0 "Clearance completed."
-
 }
 
 # 1 Check Arch
@@ -251,44 +207,11 @@ Install_CasaOS() {
     fi
 }
 
-#Generate Service File
-Generate_Service() {
-    if [ -f ${CASA_SERVICE_PATH} ]; then
-        Show 2 "Try stop CasaOS system service."
-        # Stop before generation
-        if [[ $(systemctl is-active ${CASA_BIN} &>/dev/null) ]]; then
-            ${sudo_cmd} systemctl stop ${CASA_BIN}
-        fi
-    fi
-    Show 2 "Create system service for CasaOS."
-
-    ${sudo_cmd} tee ${CASA_SERVICE_PATH} >/dev/null <<EOF
-				[Unit]
-				Description=CasaOS Service
-				StartLimitIntervalSec=0
-
-				[Service]
-				Type=simple
-				LimitNOFILE=15210
-				Restart=always
-				RestartSec=1
-				User=root
-				ExecStart=${CASA_BIN_PATH} -c ${CASA_CONF_PATH}
-
-				[Install]
-				WantedBy=multi-user.target
-EOF
-    Show 0 "CasaOS service Successfully created."
-}
-
 # Start CasaOS
 Start_CasaOS() {
-    Show 2 "Create a system startup service for CasaOS."
-    $sudo_cmd systemctl daemon-reload
-    $sudo_cmd systemctl enable ${CASA_BIN}
-
+    
     Show 2 "Start CasaOS service."
-    $sudo_cmd systemctl start ${CASA_BIN}
+    $sudo_cmd systemctl restart ${CASA_BIN}
 
     if [[ ! $(systemctl is-active ${CASA_BIN}) == "active" ]]; then
         Show 1 "Failed to start, please try again."
@@ -300,8 +223,6 @@ Start_CasaOS() {
 
 Check_Arch
 
-# Step 7: Download CasaOS
-Check_Exist
 Download_CasaOS
 
 # Step 8: Install Addon
@@ -309,9 +230,6 @@ Install_Addons
 
 # Step 9: Install CasaOS
 Install_CasaOS
-
-# Step 10: Generate_Service
-Generate_Service
 
 # Step 11: Start CasaOS
 Start_CasaOS
