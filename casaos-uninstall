@@ -50,6 +50,7 @@ readonly CASA_SERVICE_LIB=/lib/systemd/system/casaos.service
 readonly CASA_SERVICE_ETC=/etc/systemd/system/casaos.service
 readonly CASA_ADDON1=/etc/udev/rules.d/11-usb-mount.rules
 readonly CASA_ADDON2=/etc/systemd/system/usb-mount@.service
+readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
 
 # New Casa Files
 readonly CASA_CONF_PATH=/etc/casaos.conf
@@ -241,6 +242,10 @@ Uninstall_Casaos() {
         else
             Show 0 "Successfully deleted AppData."
         fi
+    fi
+
+    if [[ -d ${CASA_UNINSTALL_PATH} ]]; then
+        ${sudo_cmd} rm -rf ${CASA_UNINSTALL_PATH}
     fi
 
 }
