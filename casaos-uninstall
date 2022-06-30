@@ -244,7 +244,7 @@ Uninstall_Casaos() {
         fi
     fi
 
-    if [[ -d ${CASA_UNINSTALL_PATH} ]]; then
+    if [[ -f ${CASA_UNINSTALL_PATH} ]]; then
         ${sudo_cmd} rm -rf ${CASA_UNINSTALL_PATH}
     fi
 
