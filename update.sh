@@ -3,8 +3,8 @@
  # @Author:  LinkLeong link@icewhale.com
  # @Date: 2022-06-30 10:08:33
  # @LastEditors: a624669980@163.com a624669980@163.com
- # @LastEditTime: 2022-06-30 18:23:55
- # @FilePath: /get/upload.sh
+ # @LastEditTime: 2022-06-30 18:58:26
+ # @FilePath: /get/updata.sh
  # @Description:
 ### 
 
