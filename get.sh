@@ -384,7 +384,7 @@ Install_Depends() {
 Check_Docker_Running() {
     for ((i = 1; i <= 3; i++)); do
         sleep 3
-        if [[ ! $(systemctl is-active docker &>/dev/null) ]]; then
+        if [[ ! $(${sudo_cmd} systemctl is-active docker &>/dev/null) ]]; then
             Show 1 "Docker is not running, try to start"
             ${sudo_cmd} systemctl start docker
         else
@@ -441,7 +441,7 @@ Download_CasaOS() {
     # Remove Temp File
     ${sudo_cmd} rm -rf "$PREFIX/tmp/${Casa_Package}"
     # Download Package
-    ${Net_Getter} "${Casa_Package_URL}" >"$PREFIX/tmp/${Casa_Package}"
+    ${sudo_cmd} ${Net_Getter} "${Casa_Package_URL}" >"$PREFIX/tmp/${Casa_Package}"
     if [[ $? -ne 0 ]]; then
         Show 1 "Download failed, Please check if your internet connection is working and retry."
         exit 1
@@ -459,7 +459,7 @@ Download_CasaOS() {
 
     #Download Uninstall Script
 
-    ${Net_Getter} $CASA_UNINSTALL_URL >$CASA_UNINSTALL_PATH
+    ${sudo_cmd} ${Net_Getter} $CASA_UNINSTALL_URL >$CASA_UNINSTALL_PATH
     if [[ $? -ne 0 ]]; then
         Show 1 "Download uninstall script failed, Please check if your internet connection is working and retry."
         exit 1
@@ -570,9 +570,9 @@ Start_CasaOS() {
 }
 # Get the physical NIC IP
 Get_IPs() {
-    All_NIC=$(ls /sys/class/net/ | grep -v "$(ls /sys/devices/virtual/net/)")
+    All_NIC=$($sudo_cmd ls /sys/class/net/ | grep -v "$(ls /sys/devices/virtual/net/)")
     for NIC in ${All_NIC}; do
-        Ip=$(ifconfig ${NIC} | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}' | tr -d "addr:")
+        Ip=$($sudo_cmd ifconfig ${NIC} | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}' | tr -d "addr:")
         if [[ -n $Ip ]]; then
             if [[ "$Port" -eq "80" ]]; then
                 echo -e "${GREEN_BULLET} http://$Ip (${NIC})"
