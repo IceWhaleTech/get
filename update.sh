@@ -3,7 +3,7 @@
  # @Author:  LinkLeong link@icewhale.com
  # @Date: 2022-06-30 10:08:33
  # @LastEditors: a624669980@163.com a624669980@163.com
- # @LastEditTime: 2022-07-01 11:18:40
+ # @LastEditTime: 2022-07-08 15:20:58
  # @FilePath: /get/updata.sh
  # @Description:
 ### 
@@ -28,6 +28,8 @@ readonly CASA_LOGS_PATH=/var/log/casaos/
 readonly CASA_PACKAGE_EXT=".tar.gz"
 readonly CASA_RELEASE_API="https://api.github.com/repos/${CASA_REPO}/releases"
 readonly CASA_OPENWRT_DOCS="https://github.com/IceWhaleTech/CasaOS-OpenWrt"
+readonly CASA_UNINSTALL_URL="https://raw.githubusercontent.com/IceWhaleTech/get/main/casaos-uninstall"
+readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
 
 readonly COLOUR_RESET='\e[0m'
 readonly aCOLOUR=(
@@ -155,6 +157,16 @@ Download_CasaOS() {
     esac
     #Setting Executable Permissions
     ${sudo_cmd} chmod +x "$PREFIX${CASA_UNZIP_TEMP_FOLDER}/${CASA_BIN}"
+
+    #Download Uninstall Script
+
+    ${sudo_cmd} ${Net_Getter} "$CASA_UNINSTALL_URL" >"$PREFIX/tmp/casaos-uninstall"
+    ${sudo_cmd} cp -rf "$PREFIX/tmp/casaos-uninstall" $CASA_UNINSTALL_PATH
+    if [[ $? -ne 0 ]]; then
+        Show 1 "Download uninstall script failed, Please check if your internet connection is working and retry."
+        exit 1
+    fi
+    ${sudo_cmd} chmod +x $CASA_UNINSTALL_PATH
 
 }
 
