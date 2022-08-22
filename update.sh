@@ -14,7 +14,7 @@
 readonly UNAME_M="$(uname -m)"
 
 # CasaOS PATHS
-readonly CASA_REPO=IceWhaleTech/CasaOS
+readonly CASA_REPO=LinkLeong/casaos-alpha
 readonly CASA_UNZIP_TEMP_FOLDER=/tmp/casaos
 readonly CASA_BIN=casaos
 readonly CASA_BIN_PATH=/usr/bin/casaos
@@ -30,15 +30,13 @@ readonly CASA_RELEASE_API="https://api.github.com/repos/${CASA_REPO}/releases"
 readonly CASA_OPENWRT_DOCS="https://github.com/IceWhaleTech/CasaOS-OpenWrt"
 readonly CASA_UNINSTALL_URL="https://raw.githubusercontent.com/IceWhaleTech/get/main/casaos-uninstall"
 readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
+readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'whiptail' 'udevil' 'samba' 'cifs-utils')
+readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'whiptail' 'udevil' 'samba' 'mount.cifs')
+# DEPANDS CONF PATH
+readonly UDEVIL_CONF_PATH=/etc/udevil/udevil.conf
 
 readonly COLOUR_RESET='\e[0m'
-readonly aCOLOUR=(
-    '\e[38;5;154m' # green  	| Lines, bullets and separators
-    '\e[1m'        # Bold white	| Main descriptions
-    '\e[90m'       # Grey		| Credits
-    '\e[91m'       # Red		| Update notifications Alert
-    '\e[33m'       # Yellow		| Emphasis
-)
+
 
 Target_Arch=""
 Target_Distro="debian"
@@ -60,21 +58,17 @@ Casa_Tag=""
 Show() {
     # OK
     if (($1 == 0)); then
-        echo -e "${aCOLOUR[2]}[$COLOUR_RESET${aCOLOUR[0]}  OK  $COLOUR_RESET${aCOLOUR[2]}]$COLOUR_RESET $2"
+        echo "- OK $2" >> /var/log/casaos/upgrade.log
     # FAILED
     elif (($1 == 1)); then
-        echo -e "${aCOLOUR[2]}[$COLOUR_RESET${aCOLOUR[3]}FAILED$COLOUR_RESET${aCOLOUR[2]}]$COLOUR_RESET $2"
+        echo "- FAILED $2" >> /var/log/casaos/upgrade.log
     # INFO
     elif (($1 == 2)); then
-        echo -e "${aCOLOUR[2]}[$COLOUR_RESET${aCOLOUR[0]} INFO $COLOUR_RESET${aCOLOUR[2]}]$COLOUR_RESET $2"
+        echo "- INFO $2" >> /var/log/casaos/upgrade.log
     # NOTICE
     elif (($1 == 3)); then
-        echo -e "${aCOLOUR[2]}[$COLOUR_RESET${aCOLOUR[4]}NOTICE$COLOUR_RESET${aCOLOUR[2]}]$COLOUR_RESET $2"
+        echo "- NOTICE $2" >> /var/log/casaos/upgrade.log
     fi
-}
-
-Warn() {
-    echo -e "${aCOLOUR[3]}$1$COLOUR_RESET"
 }
 
 # 1 Check Arch
@@ -97,31 +91,53 @@ Check_Arch() {
     Show 0 "Your hardware architecture is : $UNAME_M"
 }
 
-# Check Docker running
-Check_Docker_Running() {
-    for ((i = 1; i <= 3; i++)); do
-        sleep 3
-        if [[ ! $(systemctl is-active docker &>/dev/null) ]]; then
-            Show 1 "Docker is not running, try to start"
-            ${sudo_cmd} systemctl start docker
-        else
-            break
+# Install depends package
+Install_Depends() {
+    for ((i = 0; i < ${#CASA_DEPANDS_COMMAND[@]}; i++)); do
+        cmd=${CASA_DEPANDS_COMMAND[i]}
+        if [[ ! -x "$(command -v $cmd)" ]]; then
+            packagesNeeded=${CASA_DEPANDS_PACKAGE[i]}
+            Show 2 "Install the necessary dependencies: \e[33m$packagesNeeded \e[0m"
+            echo -e "${aCOLOUR[2]}\c"
+            if [ -x "$(command -v apk)" ]; then
+                ${sudo_cmd} apk add --no-cache $packagesNeeded
+            elif [ -x "$(command -v apt-get)" ]; then
+                ${sudo_cmd} apt-get -y -q install $packagesNeeded --no-upgrade
+            elif [ -x "$(command -v dnf)" ]; then
+                ${sudo_cmd} dnf install $packagesNeeded
+            elif [ -x "$(command -v zypper)" ]; then
+                ${sudo_cmd} zypper install $packagesNeeded
+            elif [ -x "$(command -v yum)" ]; then
+                ${sudo_cmd} yum install $packagesNeeded
+            elif [ -x "$(command -v pacman)" ]; then
+                ${sudo_cmd} pacman -S $packagesNeeded
+            elif [ -x "$(command -v paru)" ]; then
+                ${sudo_cmd} paru -S $packagesNeeded
+            else
+                Show 1 "Package manager not found. You must manually install: \e[33m$packagesNeeded \e[0m"
+            fi
+            echo -e "${COLOUR_RESET}\c"
         fi
     done
 }
 
-#Install Docker
-Install_Docker() {
-    Show 0 "Docker will be installed automatically."
-    echo -e "${aCOLOUR[2]}\c"
-    curl -fsSL https://get.docker.com | bash
-    echo -e "${COLOUR_RESET}\c"
-    if [[ $? -ne 0 ]]; then
-        Show 1 "Installation failed, please try again."
-        exit 1
-    else
-        Show 0 "Docker Successfully installed."
-        Check_Docker_Running
+#Configuration Addons
+Configuration_Addons() {
+    Show 2 "Configuration CasaOS Addons"
+
+    #Udevil
+    if [[ -f $PREFIX${UDEVIL_CONF_PATH} ]]; then
+        
+        #Change udevil mount dir to /DATA
+        ${sudo_cmd} sed -i 's/allowed_media_dirs = \/media\/$USER, \/run\/media\/$USER/allowed_media_dirs = \/DATA, \/DATA\/$USER/g' $PREFIX${UDEVIL_CONF_PATH}
+        
+        # Add a devmon user
+        ${sudo_cmd} useradd -M -u 300 devmon
+        ${sudo_cmd} usermod -L devmon
+
+        # Add and start Devmon service
+        ${sudo_cmd} systemctl enable devmon@devmon
+        ${sudo_cmd} systemctl start devmon@devmon
     fi
 }
 
@@ -170,13 +186,6 @@ Download_CasaOS() {
 
 }
 
-#Install Addons
-Install_Addons() {
-    Show 2 "Installing CasaOS Addons"
-    ${sudo_cmd} cp -rf "$PREFIX${CASA_UNZIP_TEMP_FOLDER}/shell/11-usb-mount.rules" "/etc/udev/rules.d/"
-    ${sudo_cmd} cp -rf "$PREFIX${CASA_UNZIP_TEMP_FOLDER}/shell/usb-mount@.service" "/etc/systemd/system/"
-    sync
-}
 
 #Clean Temp Files
 Clean_Temp_Files() {
@@ -229,7 +238,7 @@ Start_CasaOS() {
         Show 1 "Failed to start, please try again."
         exit 1
     else
-        Show 0 "Service started successfully."
+        Show 0 "CasaOS upgrade successfully"
     fi
 }
 
@@ -238,11 +247,13 @@ Check_Arch
 Download_CasaOS
 
 # Step 8: Install Addon
-Install_Addons
-
+Install_Depends
+# Step 8.1: Configuration Addon
+Configuration_Addons
 # Step 9: Install CasaOS
 Install_CasaOS
 
+Clean_Temp_Files
+
 # Step 11: Start CasaOS
 Start_CasaOS
-Clean_Temp_Files
