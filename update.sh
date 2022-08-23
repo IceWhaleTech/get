@@ -14,7 +14,7 @@
 readonly UNAME_M="$(uname -m)"
 
 # CasaOS PATHS
-readonly CASA_REPO=LinkLeong/casaos-alpha
+readonly CASA_REPO=IceWhaleTech/CasaOS
 readonly CASA_UNZIP_TEMP_FOLDER=/tmp/casaos
 readonly CASA_BIN=casaos
 readonly CASA_BIN_PATH=/usr/bin/casaos
