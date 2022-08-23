@@ -97,7 +97,7 @@ Install_Depends() {
         cmd=${CASA_DEPANDS_COMMAND[i]}
         if [[ ! -x "$(command -v $cmd)" ]]; then
             packagesNeeded=${CASA_DEPANDS_PACKAGE[i]}
-            Show 2 "Install the necessary dependencies: \e[33m$packagesNeeded \e[0m"
+            Show 2 "Install the necessary dependencies: $packagesNeeded "
             echo -e "${aCOLOUR[2]}\c"
             if [ -x "$(command -v apk)" ]; then
                 ${sudo_cmd} apk add --no-cache $packagesNeeded
@@ -114,7 +114,7 @@ Install_Depends() {
             elif [ -x "$(command -v paru)" ]; then
                 ${sudo_cmd} paru -S $packagesNeeded
             else
-                Show 1 "Package manager not found. You must manually install: \e[33m$packagesNeeded \e[0m"
+                Show 1 "Package manager not found. You must manually install: $packagesNeeded "
             fi
             echo -e "${COLOUR_RESET}\c"
         fi
