@@ -232,6 +232,7 @@ Install_CasaOS() {
 Start_CasaOS() {
     
     Show 2 "Start CasaOS service."
+    Show 0 "CasaOS upgrade successfully"
     $sudo_cmd systemctl restart ${CASA_BIN}
 
     if [[ ! $(systemctl is-active ${CASA_BIN}) == "active" ]]; then
