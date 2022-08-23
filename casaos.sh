@@ -46,8 +46,8 @@ readonly MINIMUM_DISK_SIZE_GB="5"
 readonly MINIMUM_MEMORY="400"
 readonly MINIMUM_DOCER_VERSION="20"
 readonly SUPPORTED_DIST=('debian' 'ubuntu' 'raspbian')
-readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'whiptail')
-readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'whiptail')
+readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'whiptail' 'udevil' 'samba' 'cifs-utils')
+readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'whiptail' 'udevil' 'samba' 'mount.cifs')
 
 # SYSTEM INFO
 readonly PHYSICAL_MEMORY=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
@@ -73,7 +73,11 @@ readonly CASA_PACKAGE_EXT=".tar.gz"
 readonly CASA_RELEASE_API="https://api.github.com/repos/${CASA_REPO}/releases"
 readonly CASA_OPENWRT_DOCS="https://github.com/IceWhaleTech/CasaOS-OpenWrt"
 readonly CASA_UNINSTALL_URL="https://raw.githubusercontent.com/IceWhaleTech/get/main/casaos-uninstall"
+readonly CASA_VERSION_URL="https://api.casaos.io/casaos-api/version"
 readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
+
+# DEPANDS CONF PATH
+readonly UDEVIL_CONF_PATH=/etc/udevil/udevil.conf
 
 readonly COLOUR_RESET='\e[0m'
 readonly aCOLOUR=(
@@ -108,9 +112,9 @@ onCtrlC() {
 #Usage
 usage() {
     cat <<-EOF
-		Usage: casaos.sh [options]
+		Usage: get.sh [options]
 		Valid options are:
-		    -v <version>            Specify version to install For example: casaos.sh -v v0.2.3 | casaos.sh -v pre | casaos.sh
+		    -v <version>            Specify version to install For example: get.sh -v v0.2.3 | get.sh -v pre | get.sh
 		    -h                      Show this help message and exit
 	EOF
     exit $1
@@ -339,6 +343,22 @@ Get_Port() {
     fi
 }
 
+# Update package
+
+Update_Package_Resource() {
+    if [ -x "$(command -v apk)" ]; then
+        ${sudo_cmd} apk update
+    elif [ -x "$(command -v apt-get)" ]; then
+        ${sudo_cmd} apt-get update
+    elif [ -x "$(command -v dnf)" ]; then
+        ${sudo_cmd} dnf check-update
+    elif [ -x "$(command -v zypper)" ]; then
+        ${sudo_cmd} zypper update
+    elif [ -x "$(command -v yum)" ]; then
+        ${sudo_cmd} yum update
+    fi
+}
+
 # Install depends package
 Install_Depends() {
     for ((i = 0; i < ${#CASA_DEPANDS_COMMAND[@]}; i++)); do
@@ -369,17 +389,47 @@ Install_Depends() {
     done
 }
 
+Check_Dependency_Installation() {
+    for ((i = 0; i < ${#CASA_DEPANDS_COMMAND[@]}; i++)); do
+        cmd=${CASA_DEPANDS_COMMAND[i]}
+        if [[ ! -x "$(command -v $cmd)" ]]; then
+            packagesNeeded=${CASA_DEPANDS_PACKAGE[i]}
+            Show 1 "Dependency \e[33m$packagesNeeded \e[0m installation failed, please try again manually!"
+            exit 1
+        fi
+    done
+}
+
 # Check Docker running
 Check_Docker_Running() {
     for ((i = 1; i <= 3; i++)); do
         sleep 3
-        if [[ ! $(${sudo_cmd} systemctl is-active docker &>/dev/null) ]]; then
+        if [[ ! $(${sudo_cmd} systemctl is-active docker) == "active" ]]; then
             Show 1 "Docker is not running, try to start"
             ${sudo_cmd} systemctl start docker
         else
             break
         fi
     done
+}
+
+# Check Docker installed
+Check_Docker_Install_Final() {
+    if [[ -x "$(command -v docker)" ]]; then
+        Docker_Version=$(${sudo_cmd} docker version --format '{{.Server.Version}}')
+        if [[ $? -ne 0 ]]; then
+            Install_Docker
+        elif [[ ${Docker_Version:0:2} -lt "${MINIMUM_DOCER_VERSION}" ]]; then
+            Show 1 "Recommended minimum Docker version is \e[33m${MINIMUM_DOCER_VERSION}.xx.xx\e[0m,\Current Docker verison is \e[33m${Docker_Version}\e[0m,\nPlease uninstall current Docker and rerun the CasaOS installation script."
+            exit 1
+        else
+            Show 0 "Current Docker verison is ${Docker_Version}."
+            Check_Docker_Running
+        fi
+    else
+        Show 1 "Installation failed, please run 'curl -fsSL https://get.docker.com | bash' and rerun the CasaOS installation script."
+        exit 1
+    fi
 }
 
 #Install Docker
@@ -392,8 +442,7 @@ Install_Docker() {
         Show 1 "Installation failed, please try again."
         exit 1
     else
-        Show 0 "Docker Successfully installed."
-        Check_Docker_Running
+        Check_Docker_Install_Final
     fi
 }
 
@@ -420,7 +469,7 @@ Download_CasaOS() {
     Net_Getter="curl -fsSLk"
     Casa_Package="${Target_OS}-${Target_Arch}-casaos${CASA_PACKAGE_EXT}"
     if [[ ! -n "$version" ]]; then
-        Casa_Tag="$(${Net_Getter} ${CASA_RELEASE_API}/latest | grep -o '"tag_name": ".*"' | sed 's/"//g' | sed 's/tag_name: //g')"
+        Casa_Tag="v$(${Net_Getter} ${CASA_VERSION_URL})"
     elif [[ $version == "pre" ]]; then
         Casa_Tag="$(${net_getter} ${CASA_RELEASE_API} | grep -o '"tag_name": ".*"' | sed 's/"//g' | sed 's/tag_name: //g' | sed -n '1p')"
     else
@@ -447,7 +496,9 @@ Download_CasaOS() {
     ${sudo_cmd} chmod +x "$PREFIX${CASA_UNZIP_TEMP_FOLDER}/${CASA_BIN}"
 
     #Download Uninstall Script
-
+    if [[ -f $PREFIX/tmp/casaos-uninstall ]]; then
+        ${sudo_cmd} rm -rf $PREFIX/tmp/casaos-uninstall
+    fi
     ${sudo_cmd} ${Net_Getter} "$CASA_UNINSTALL_URL" >"$PREFIX/tmp/casaos-uninstall"
     ${sudo_cmd} cp -rf "$PREFIX/tmp/casaos-uninstall" $CASA_UNINSTALL_PATH
     if [[ $? -ne 0 ]]; then
@@ -461,9 +512,38 @@ Download_CasaOS() {
 #Install Addons
 Install_Addons() {
     Show 2 "Installing CasaOS Addons"
-    ${sudo_cmd} cp -rf "$PREFIX${CASA_UNZIP_TEMP_FOLDER}/shell/11-usb-mount.rules" "/etc/udev/rules.d/"
-    ${sudo_cmd} cp -rf "$PREFIX${CASA_UNZIP_TEMP_FOLDER}/shell/usb-mount@.service" "/etc/systemd/system/"
+    # ${sudo_cmd} cp -rf "$PREFIX${CASA_UNZIP_TEMP_FOLDER}/shell/11-usb-mount.rules" "/etc/udev/rules.d/"
+    # ${sudo_cmd} cp -rf "$PREFIX${CASA_UNZIP_TEMP_FOLDER}/shell/usb-mount@.service" "/etc/systemd/system/"
     sync
+}
+
+#Configuration Addons
+Configuration_Addons() {
+    Show 2 "Configuration CasaOS Addons"
+    #Remove old udev rules
+    if [[ -f $PREFIX/etc/udev/rules.d/11-usb-mount.rules ]]; then
+        ${sudo_cmd} rm -rf $PREFIX/etc/udev/rules.d/11-usb-mount.rules
+    fi
+
+    if [[ -f $PREFIX/etc/systemd/system/usb-mount@.service ]]; then
+        ${sudo_cmd} rm -rf $PREFIX/etc/systemd/system/usb-mount@.service
+    fi
+
+
+    #Udevil
+    if [[ -f $PREFIX${UDEVIL_CONF_PATH} ]]; then
+
+        #Change udevil mount dir to /DATA
+        ${sudo_cmd} sed -i 's/allowed_media_dirs = \/media\/$USER, \/run\/media\/$USER/allowed_media_dirs = \/DATA, \/DATA\/$USER/g' $PREFIX${UDEVIL_CONF_PATH}
+
+        # Add a devmon user
+        ${sudo_cmd} useradd -M -u 300 devmon
+        ${sudo_cmd} usermod -L devmon
+
+        # Add and start Devmon service
+        ${sudo_cmd} systemctl enable devmon@devmon
+        ${sudo_cmd} systemctl start devmon@devmon
+    fi
 }
 
 #Clean Temp Files
@@ -489,7 +569,7 @@ Install_CasaOS() {
     ${sudo_cmd} chmod +x $PREFIX${CASA_HELPER_PATH}*
 
     # Install Conf
-    if [[ ! -f ${CASA_CONF_PATH} ]]; then
+    if [[ ! -f $PREFIX${CASA_CONF_PATH} ]]; then
         if [[ -f $PREFIX${CASA_UNZIP_TEMP_FOLDER}/conf/conf.ini.sample ]]; then
             ${sudo_cmd} mv -f $PREFIX${CASA_UNZIP_TEMP_FOLDER}/conf/conf.ini.sample ${CASA_CONF_PATH}
         else
@@ -512,7 +592,7 @@ Generate_Service() {
     if [ -f ${CASA_SERVICE_PATH} ]; then
         Show 2 "Try stop CasaOS system service."
         # Stop before generation
-        if [[ $(systemctl is-active ${CASA_BIN} &>/dev/null) ]]; then
+        if [[ $(systemctl is-active ${CASA_BIN}) == "active" ]]; then
             ${sudo_cmd} systemctl stop ${CASA_BIN}
         fi
     fi
@@ -621,7 +701,9 @@ Check_Memory
 Check_Disk
 
 # Step 5: Install Depends
+Update_Package_Resource
 Install_Depends
+Check_Dependency_Installation
 
 # Step 6： Check And Install Docker
 Check_Docker_Install
@@ -632,6 +714,9 @@ Download_CasaOS
 
 # Step 8: Install Addon
 Install_Addons
+
+# Step 8.1: Configuration Addon
+Configuration_Addons
 
 # Step 9: Install CasaOS
 Install_CasaOS
