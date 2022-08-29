@@ -19,8 +19,7 @@
 #   This only work on  Linux systems. Please
 #   open an issue if you notice any bugs.
 #
-
-
+clear
 echo -e "\e[0m\c"
 echo '
    _____                 ____   _____ 
@@ -89,22 +88,6 @@ TARGET_DISTRO="debian"
 TARGET_OS="linux"
 CASA_TAG="v0.3.6-alpha3"
 TMP_ROOT=/tmp/casaos-installer
-
-
-# PACKAGE LIST OF CASAOS
-
-CASA_PACKAGES=(
-    "https://github.com/LinkLeong/casaos-alpha/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-v0.3.6.tar.gz"
-    "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-gateway-${CASA_TAG}.tar.gz"
-    "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-user-service-${CASA_TAG}.tar.gz"
-    "https://github.com/jerrykuku/CasaOS-UI/releases/download/v0.3.5-snapshot/linux-all-casaos-ui-v0.3.6.tar.gz"
-)
-
-CASA_SERVICES=(
-    "casaos.service"
-    "casaos-gateway.service"
-    "casaos-user-service.service"
-)
 
 trap 'onCtrlC' INT
 onCtrlC() {
@@ -199,7 +182,21 @@ Check_Arch() {
         ;;
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
+    CASA_PACKAGES=(
+        "https://github.com/LinkLeong/casaos-alpha/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-v0.3.6.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-gateway-${CASA_TAG}.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-user-service-${CASA_TAG}.tar.gz"
+        "https://github.com/jerrykuku/CasaOS-UI/releases/download/v0.3.5-snapshot/linux-all-casaos-ui-v0.3.6.tar.gz"
+    )
 }
+
+# PACKAGE LIST OF CASAOS
+
+CASA_SERVICES=(
+    "casaos-gateway.service"
+    "casaos-user-service.service"
+    "casaos.service"
+)
 
 # 2 Check Distribution
 Check_Distribution() {
@@ -644,5 +641,5 @@ DownloadAndInstallCasaOS
 Check_Service_status
 
 # Step 10: Show Welcome Banner
-Clear_Term
+#Clear_Term
 Welcome_Banner
