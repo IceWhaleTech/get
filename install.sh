@@ -20,8 +20,8 @@
 #   open an issue if you notice any bugs.
 #
 
-clear
 
+ColorReset
 echo '
    _____                 ____   _____ 
   / ____|               / __ \ / ____|
@@ -60,7 +60,7 @@ readonly UNAME_M="$(uname -m)"
 readonly UNAME_U="$(uname -s)"
 readonly NET_GETTER="curl -fsSLk"
 
-readonly CASA_CONF_PATH=/etc/casaos.conf
+readonly CASA_CONF_PATH=/etc/casaos/gateway.ini
 
 readonly CASA_VERSION_URL="https://api.casaos.io/casaos-api/version"
 
@@ -89,7 +89,7 @@ TARGET_DISTRO="debian"
 TARGET_OS="linux"
 CASA_TAG="v0.3.6-alpha3"
 TMP_ROOT=/tmp/casaos-installer
-BUILD_DIR=${1}
+
 
 # PACKAGE LIST OF CASAOS
 
@@ -262,7 +262,7 @@ Check_Memory() {
 # 5 Check Disk
 Check_Disk() {
     if [[ "${FREE_DISK_GB}" -lt "${MINIMUM_DISK_SIZE_GB}" ]]; then
-        if (whiptail --title "${TITLE}" --yesno --defaultno "Recommended free disk space is greater than \e[33m${MINIMUM_DISK_SIZE_GB}GB\e[0m, Current free disk space is \e[33m${FREE_DISK_GB}GB.Continue installation?" 10 60); then
+        if (whiptail --title "${TITLE}" --yesno --defaultno "Recommended free disk space is greater than ${MINIMUM_DISK_SIZE_GB}GB, Current free disk space is ${FREE_DISK_GB}GB.Continue installation?" 10 60); then
             Show 0 "Disk capacity check has been ignored."
         else
             Show 1 "Already exited the installation."
@@ -410,7 +410,7 @@ Check_Docker_Install_Final() {
 
 #Install Docker
 Install_Docker() {
-    Show 0 "Docker will be installed automatically."
+    Show 2 "Install the necessary dependencies: \e[33mDocker \e[0m"
     GreyStart
     curl -fsSL https://get.docker.com | bash
     ColorReset
@@ -443,16 +443,16 @@ Configuration_Addons() {
         # GreyStart
         # Add a devmon user
         USERNAME=devmon
-        id ${USERNAME} &>/dev/null
-        if [[ $? -ne 0 ]]; then
+        id ${USERNAME} &>/dev/null || {
             ${sudo_cmd} useradd -M -u 300 ${USERNAME}
             ${sudo_cmd} usermod -L ${USERNAME}
-        fi
+        }
 
         # Add and start Devmon service
+        GreyStart
         ${sudo_cmd} systemctl enable devmon@devmon
         ${sudo_cmd} systemctl start devmon@devmon
-
+        ColorReset
         # ColorReset
     fi
 }
@@ -540,7 +540,7 @@ Check_Service_status() {
     for SERVICE in "${CASA_SERVICES[@]}"; do
         Show 2 "Checking ${SERVICE}..."
         if [[ $(${sudo_cmd} systemctl is-active ${SERVICE}) == "active" ]]; then
-            Show 2 "${SERVICE} is running."
+            Show 0 "${SERVICE} is running."
         else
             Show 1 "${SERVICE} is not running, Please reinstall."
             exit 1
@@ -550,7 +550,7 @@ Check_Service_status() {
 
 # Get the physical NIC IP
 Get_IPs() {
-    PORT=$(${sudo_cmd} cat ${CASA_CONF_PATH} | grep HttpPort | awk '{print $3}')
+    PORT=$(${sudo_cmd} cat ${CASA_CONF_PATH} | grep port | sed 's/port=//')
     ALL_NIC=$($sudo_cmd ls /sys/class/net/ | grep -v "$(ls /sys/devices/virtual/net/)")
     for NIC in ${ALL_NIC}; do
         IP=$($sudo_cmd ifconfig ${NIC} | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}' | tr -d "addr:")
@@ -590,21 +590,21 @@ Welcome_Banner() {
 #Usage
 usage() {
     cat <<-EOF
-		Usage: get.sh [options]
+		Usage: install.sh [options]
 		Valid options are:
-		    -v <version>            Specify version to install For example: get.sh -v v0.2.3 | get.sh -v pre | get.sh
-		    -p <builddir>           Specify build directory
+		    -v <version>            Specify version to install For example: install.sh -v v0.3.6 or install.sh (Only versions after 0.3.6 can be installed)
+		    -p <build_dir>          Specify build directory (Local install)
 		    -h                      Show this help message and exit
 	EOF
     exit $1
 }
 
-while getopts ":v:h" arg; do
+while getopts ":v:p:h" arg; do
     case "$arg" in
     v)
         version=$OPTARG
         ;;
-    P)
+    p)
         BUILD_DIR=$OPTARG
         ;;
     h)
@@ -644,4 +644,5 @@ DownloadAndInstallCasaOS
 Check_Service_status
 
 # Step 10: Show Welcome Banner
+Clear_Term
 Welcome_Banner
