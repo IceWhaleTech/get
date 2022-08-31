@@ -61,7 +61,7 @@ readonly NET_GETTER="curl -fsSLk"
 
 readonly CASA_CONF_PATH=/etc/casaos/gateway.ini
 readonly CASA_UNINSTALL_URL="https://raw.githubusercontent.com/IceWhaleTech/get/main/uninstall.sh"
-
+readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
 readonly CASA_VERSION_URL="https://api.casaos.io/casaos-api/version"
 
 # REQUIREMENTS CONF PATH
@@ -118,6 +118,7 @@ Show() {
     # FAILED
     elif (($1 == 1)); then
         echo -e "${aCOLOUR[2]}[$COLOUR_RESET${aCOLOUR[3]}FAILED$COLOUR_RESET${aCOLOUR[2]}]$COLOUR_RESET $2"
+        exit 1
     # INFO
     elif (($1 == 2)); then
         echo -e "${aCOLOUR[2]}[$COLOUR_RESET${aCOLOUR[0]} INFO $COLOUR_RESET${aCOLOUR[2]}]$COLOUR_RESET $2"
@@ -543,7 +544,6 @@ DownloadAndInstallCasaOS() {
         exit 1
     fi
     ${sudo_cmd} chmod +x $CASA_UNINSTALL_PATH
-    ${sudo_cmd} rm -rf "$PREFIX/tmp/casaos-uninstall"
 }
 
 Check_Service_status() {
