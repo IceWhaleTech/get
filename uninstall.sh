@@ -216,6 +216,12 @@ Uninstall_Casaos() {
         ${sudo_cmd} rm -rf ${CASA_CONF_PATH_OLD}
     fi
 
+    ${sudo_cmd} cat ${MANIFEST} | while read line; do
+        if [[ -f ${line} ]]; then
+            ${sudo_cmd} rm -rf ${line}
+        fi
+    done
+
     if [[ -d ${CASA_USER_FILES} ]]; then
         ${sudo_cmd} rm -rf ${CASA_USER_FILES}
     fi
@@ -237,11 +243,7 @@ Uninstall_Casaos() {
         fi
     fi
 
-    ${sudo_cmd} cat ${MANIFEST} | while read line; do
-        if [[ -f ${line} ]]; then
-            ${sudo_cmd} rm -rf ${line}
-        fi
-    done
+    
 
     if [[ -d ${CASA_CONF_PATH} ]]; then
         ${sudo_cmd} rm -rf ${CASA_CONF_PATH}
