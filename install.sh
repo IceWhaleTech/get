@@ -86,7 +86,7 @@ readonly PASSED="${aCOLOUR[0]}PASSED$COLOUR_RESET"
 TARGET_ARCH=""
 TARGET_DISTRO="debian"
 TARGET_OS="linux"
-CASA_TAG="v0.3.6-alpha3"
+CASA_TAG="v0.3.6-alpha5"
 TMP_ROOT=/tmp/casaos-installer
 
 trap 'onCtrlC' INT
@@ -186,7 +186,7 @@ Check_Arch() {
         "https://github.com/LinkLeong/casaos-alpha/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-v0.3.6.tar.gz"
         "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-gateway-${CASA_TAG}.tar.gz"
         "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-user-service-${CASA_TAG}.tar.gz"
-        "https://github.com/jerrykuku/CasaOS-UI/releases/download/v0.3.5-snapshot/linux-all-casaos-ui-v0.3.6.tar.gz"
+        "https://github.com/zhanghengxin/CasaOS-UI/releases/download/v0.3.6-alpha/linux-all-casaos-v0.3.6-alpha.tar.gz"
     )
 }
 
