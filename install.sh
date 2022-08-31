@@ -465,7 +465,7 @@ DownloadAndInstallCasaOS() {
         CASA_TAG="$version"
     fi
 
-    CASA_TAG="v0.3.6-alpha2"
+    # CASA_TAG="v0.3.6-alpha2"
 
     if [ -z "${BUILD_DIR}" ]; then
 
