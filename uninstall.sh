@@ -166,10 +166,8 @@ Uninstall_Casaos() {
 
     for SERVICE in "${CASA_SERVICES[@]}"; do
         Show 2 "Stopping ${SERVICE}..."
-        GreyStart
         systemctl stop "${SERVICE}" || Show 3 "Service ${SERVICE} does not exist."
         systemctl disable "${SERVICE}" || Show 3 "Service ${SERVICE} does not exist."
-        ColorReset
     done
 
     # Remove Service file
