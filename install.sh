@@ -536,7 +536,7 @@ DownloadAndInstallCasaOS() {
     if [[ -f $PREFIX/tmp/casaos-uninstall ]]; then
         ${sudo_cmd} rm -rf $PREFIX/tmp/casaos-uninstall
     fi
-    ${sudo_cmd} ${Net_Getter} "$CASA_UNINSTALL_URL" >"$PREFIX/tmp/casaos-uninstall"
+    ${sudo_cmd} curl -fsSLk "$CASA_UNINSTALL_URL" >"$PREFIX/tmp/casaos-uninstall"
     ${sudo_cmd} cp -rf "$PREFIX/tmp/casaos-uninstall" $CASA_UNINSTALL_PATH
     if [[ $? -ne 0 ]]; then
         Show 1 "Download uninstall script failed, Please check if your internet connection is working and retry."
