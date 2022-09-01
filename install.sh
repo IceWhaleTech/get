@@ -185,9 +185,9 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
+        "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6-alpha5/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6-alpha6.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.6-alpha6/linux-${TARGET_ARCH}-casaos-user-service-v0.3.6-alpha7.tar.gz"
         "https://github.com/LinkLeong/casaos-alpha/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-v0.3.6.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6-alpha5/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6-alpha5.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.6-alpha6/linux-${TARGET_ARCH}-casaos-user-service-v0.3.6-alpha6.tar.gz"
         "https://github.com/zhanghengxin/CasaOS-UI/releases/download/v0.3.6-alpha/linux-all-casaos-v0.3.6-alpha.tar.gz"
     )
 }
@@ -321,7 +321,7 @@ Update_Package_Resource() {
 Install_Depends() {
     for ((i = 0; i < ${#CASA_DEPANDS_COMMAND[@]}; i++)); do
         cmd=${CASA_DEPANDS_COMMAND[i]}
-        if [[ ! -x "$(command -v $cmd)" ]]; then
+        if [[ ! -x "$(${sudo_cmd} which $cmd)" ]]; then
             packagesNeeded=${CASA_DEPANDS_PACKAGE[i]}
             Show 2 "Install the necessary dependencies: \e[33m$packagesNeeded \e[0m"
             GreyStart
@@ -350,7 +350,7 @@ Install_Depends() {
 Check_Dependency_Installation() {
     for ((i = 0; i < ${#CASA_DEPANDS_COMMAND[@]}; i++)); do
         cmd=${CASA_DEPANDS_COMMAND[i]}
-        if [[ ! -x "$(command -v $cmd)" ]]; then
+        if [[ ! -x "$(${sudo_cmd} which $cmd)" ]]; then
             packagesNeeded=${CASA_DEPANDS_PACKAGE[i]}
             Show 1 "Dependency \e[33m$packagesNeeded \e[0m installation failed, please try again manually!"
             exit 1
