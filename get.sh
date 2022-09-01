@@ -392,7 +392,7 @@ Install_Depends() {
 Check_Dependency_Installation() {
     for ((i = 0; i < ${#CASA_DEPANDS_COMMAND[@]}; i++)); do
         cmd=${CASA_DEPANDS_COMMAND[i]}
-        if [[ ! -x "$(command -v $cmd)" ]]; then
+        if [[ ! -x "$(${sudo_cmd} which $cmd)" ]]; then
             packagesNeeded=${CASA_DEPANDS_PACKAGE[i]}
             Show 1 "Dependency \e[33m$packagesNeeded \e[0m installation failed, please try again manually!"
             exit 1
