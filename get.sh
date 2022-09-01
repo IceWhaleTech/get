@@ -181,7 +181,7 @@ Check_Exist() {
     ${sudo_cmd} mkdir -p ${CASA_DB_PATH}
     ${sudo_cmd} mkdir -p ${CASA_TEMP_PATH}
 
-    if [[ $(systemctl is-active ${CASA_BIN}) == "active" ]]; then
+    if [[ $(${sudo_cmd} systemctl is-active ${CASA_BIN}) == "active" ]]; then
         ${sudo_cmd} systemctl stop ${CASA_BIN}
         ${sudo_cmd} systemctl disable ${CASA_BIN}
     fi
@@ -592,7 +592,7 @@ Generate_Service() {
     if [ -f ${CASA_SERVICE_PATH} ]; then
         Show 2 "Try stop CasaOS system service."
         # Stop before generation
-        if [[ $(systemctl is-active ${CASA_BIN}) == "active" ]]; then
+        if [[ $(${sudo_cmd} systemctl is-active ${CASA_BIN}) == "active" ]]; then
             ${sudo_cmd} systemctl stop ${CASA_BIN}
         fi
     fi
@@ -631,7 +631,7 @@ Start_CasaOS() {
     Show 2 "Start CasaOS service."
     $sudo_cmd systemctl start ${CASA_BIN}
 
-    if [[ ! $(systemctl is-active ${CASA_BIN}) == "active" ]]; then
+    if [[ ! $(${sudo_cmd} systemctl is-active ${CASA_BIN}) == "active" ]]; then
         Show 1 "Failed to start, please try again."
         exit 1
     else
