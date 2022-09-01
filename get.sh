@@ -363,7 +363,7 @@ Update_Package_Resource() {
 Install_Depends() {
     for ((i = 0; i < ${#CASA_DEPANDS_COMMAND[@]}; i++)); do
         cmd=${CASA_DEPANDS_COMMAND[i]}
-        if [[ ! -x "$(${sudo_cmd} command -v $cmd)" ]]; then
+        if [[ ! -x "$(${sudo_cmd} which $cmd)" ]]; then
             packagesNeeded=${CASA_DEPANDS_PACKAGE[i]}
             Show 2 "Install the necessary dependencies: \e[33m$packagesNeeded \e[0m"
             echo -e "${aCOLOUR[2]}\c"
