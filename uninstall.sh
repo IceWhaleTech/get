@@ -257,7 +257,7 @@ Uninstall_Casaos() {
 
 # Check user
 if [ `id -u` -ne 0 ];then
-	Show 1 "Please execute with a root user, or use sudo casaos-uninstall."
+	Show 1 "Please execute with a root user, or use ${aCOLOUR[4]}sudo casaos-uninstall${COLOUR_RESET}."
    exit 1
 fi
 
