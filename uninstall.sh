@@ -255,6 +255,13 @@ Uninstall_Casaos() {
 
 }
 
+# Check user
+if [ `id -u` -ne 0 ];then
+	Show 1 "Please execute with a root user, or use sudo casaos-uninstall."
+   exit 1
+fi
+
+
 #Inputs
 
 Detecting_CasaOS
@@ -333,11 +340,6 @@ else
     done
 fi
 
-# Check user
-if [ `id -u` -ne 0 ];then
-	Show 1 "Please execute with a root user, or use sudo casaos-uninstall."
-   exit 1
-fi
 
 Unistall_Container
 Remove_Images
