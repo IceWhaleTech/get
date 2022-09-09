@@ -195,8 +195,8 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-    "https://github.com/LinkLeong/casaos-alpha/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-${CASA_TAG}.tar.gz"
-	"https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6-alpha7/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6-alpha7.tar.gz"
+    "https://github.com/IceWhaleTech/CasaOS/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-${CASA_TAG}.tar.gz"
+	"https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-gateway-${CASA_TAG}.tar.gz"
         "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-user-service-${CASA_TAG}.tar.gz"
 	"https://github.com/zhanghengxin/CasaOS-UI/releases/download/${CASA_TAG}/linux-all-casaos-${CASA_TAG}.tar.gz"
 )
