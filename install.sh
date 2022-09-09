@@ -31,7 +31,7 @@ echo '
                                       
    --- Made by IceWhale with YOU ---
 '
-
+export PATH=/usr/sbin:$PATH
 set -e
 
 ###############################################################################
@@ -185,10 +185,10 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-        "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6-alpha5/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6-alpha6.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.6-alpha6/linux-${TARGET_ARCH}-casaos-user-service-v0.3.6-alpha7.tar.gz"
-        "https://github.com/LinkLeong/casaos-alpha/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-v0.3.6.tar.gz"
-        "https://github.com/zhanghengxin/CasaOS-UI/releases/download/v0.3.6-alpha/linux-all-casaos-v0.3.6-alpha.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-user-service-v0.3.6.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-v0.3.6.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-UI/releases/download/v0.3.6/linux-all-casaos-v0.3.6.tar.gz"
     )
 }
 
@@ -486,7 +486,7 @@ DownloadAndInstallCasaOS() {
         for PACKAGE_FILE in linux-*-casaos-*.tar.gz; do
             Show 2 "Extracting ${PACKAGE_FILE}..."
             GreyStart
-            tar zxvf "${PACKAGE_FILE}" || Show 1 "Failed to extract package"
+            tar zxf "${PACKAGE_FILE}" || Show 1 "Failed to extract package"
             ColorReset
         done
 
@@ -498,7 +498,7 @@ DownloadAndInstallCasaOS() {
     for SERVICE in "${CASA_SERVICES[@]}"; do
         Show 2 "Stopping ${SERVICE}..."
         GreyStart
-        systemctl stop "${SERVICE}" || Show 3 "Service ${SERVICE} does not exist."
+        ${sudo_cmd} systemctl stop "${SERVICE}" || Show 3 "Service ${SERVICE} does not exist."
         ColorReset
     done
 
@@ -507,7 +507,7 @@ DownloadAndInstallCasaOS() {
     for MIGRATION_SCRIPT in "${MIGRATION_SCRIPT_DIR}"/*.sh; do
         Show 2 "Running ${MIGRATION_SCRIPT}..."
         GreyStart
-        bash "${MIGRATION_SCRIPT}" || Show 1 "Failed to run migration script"
+        ${sudo_cmd} bash "${MIGRATION_SCRIPT}" || Show 1 "Failed to run migration script"
         ColorReset
     done
 
@@ -516,12 +516,12 @@ DownloadAndInstallCasaOS() {
 
     # Generate manifest for uninstallation
     MANIFEST_FILE=${BUILD_DIR}/sysroot/var/lib/casaos/manifest
-    touch "${MANIFEST_FILE}" || Show 1 "Failed to create manifest file"
+    ${sudo_cmd} touch "${MANIFEST_FILE}" || Show 1 "Failed to create manifest file"
 
     GreyStart
-    find "${SYSROOT_DIR}" -type f | cut -c ${#SYSROOT_DIR}- | cut -c 2- | tee "${MANIFEST_FILE}" || Show 1 "Failed to create manifest file"
+    find "${SYSROOT_DIR}" -type f | ${sudo_cmd} cut -c ${#SYSROOT_DIR}- | ${sudo_cmd} cut -c 2- | ${sudo_cmd} tee "${MANIFEST_FILE}" || Show 1 "Failed to create manifest file"
 
-    cp -rv "${SYSROOT_DIR}"/* / || Show 1 "Failed to install CasaOS"
+    ${sudo_cmd} cp -rf "${SYSROOT_DIR}"/* / || Show 1 "Failed to install CasaOS"
     ColorReset
 
     SETUP_SCRIPT_DIR=$(realpath -e "${BUILD_DIR}"/scripts/setup/script.d || Show 1 "Failed to find setup script directory")
@@ -529,7 +529,7 @@ DownloadAndInstallCasaOS() {
     for SETUP_SCRIPT in "${SETUP_SCRIPT_DIR}"/*.sh; do
         Show 2 "Running ${SETUP_SCRIPT}..."
         GreyStart
-        bash "${SETUP_SCRIPT}" || Show 1 "Failed to run setup script"
+        ${sudo_cmd} bash "${SETUP_SCRIPT}" || Show 1 "Failed to run setup script"
         ColorReset
     done
 
@@ -544,6 +544,18 @@ DownloadAndInstallCasaOS() {
         exit 1
     fi
     ${sudo_cmd} chmod +x $CASA_UNINSTALL_PATH
+    
+    for SERVICE in "${CASA_SERVICES[@]}"; do
+        Show 2 "Starting ${SERVICE}..."
+        GreyStart
+        ${sudo_cmd} systemctl start "${SERVICE}" || Show 3 "Service ${SERVICE} does not exist."
+        ColorReset
+    done
+}
+
+Clean_Temp_Files() {
+    Show 2 "Clean temporary files..."
+    ${sudo_cmd} rm -rf "${TMP_DIR}" || Show 1 "Failed to clean temporary files"
 }
 
 Check_Service_status() {
