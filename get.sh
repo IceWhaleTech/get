@@ -468,9 +468,9 @@ DownloadAndInstallCasaOS() {
     fi
 
     # CASA_TAG="v0.3.6-alpha2"
-
+    
     if [ -z "${BUILD_DIR}" ]; then
-
+        ${sudo_cmd} rm -rf ${TMP_ROOT}
         mkdir -p ${TMP_ROOT} || Show 1 "Failed to create temporary directory"
         TMP_DIR=$(mktemp -d -p ${TMP_ROOT} || Show 1 "Failed to create temporary directory")
 
