@@ -32,7 +32,7 @@ echo '
                                       
    --- Made by IceWhale with YOU ---
 '
-
+export PATH=/usr/sbin:$PATH
 set -e
 
 ###############################################################################
