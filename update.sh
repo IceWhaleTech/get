@@ -519,7 +519,7 @@ Check_Distribution
 Check_Memory
 
 # Step 5: Install Depends
-# Update_Package_Resource
+Update_Package_Resource
 Install_Depends
 Check_Dependency_Installation
 
