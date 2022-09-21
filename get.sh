@@ -222,6 +222,9 @@ Check_Distribution() {
         Show 1 "Aborted, Alpine installation is not yet supported."
         exit 1
         ;;
+    *trisquel*)
+        Target_Distro="debian"
+        ;;
     *)
         sType=1
         notice="We have not tested it on this system and it may fail to install."

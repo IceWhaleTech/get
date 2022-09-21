@@ -54,6 +54,7 @@ readonly PHYSICAL_MEMORY=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
 readonly FREE_DISK_BYTES=$(LC_ALL=C df -P / | tail -n 1 | awk '{print $4}')
 readonly FREE_DISK_GB=$((${FREE_DISK_BYTES} / 1024 / 1024))
 readonly LSB_DIST="$(. /etc/os-release && echo "$ID")"
+readonly LSB_DIST_LIKE="$(. /etc/os-release && echo "$ID_LIKE")"
 readonly UNAME_M="$(uname -m)"
 readonly UNAME_U="$(uname -s)"
 
@@ -264,6 +265,9 @@ Check_Distribution() {
     *alpine*)
         Show 1 "Aborted, Alpine installation is not yet supported."
         exit 1
+        ;;
+    *trisquel*)
+        Target_Distro="debian"
         ;;
     *)
         sType=1
