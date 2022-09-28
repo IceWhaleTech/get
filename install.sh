@@ -193,13 +193,12 @@ Check_Arch() {
     )
 }
 
-# PACKAGE LIST OF CASAOS
-
+# PACKAGE LIST OF CASAOS (make sure the services are in the right order)
 CASA_SERVICES=(
     "casaos-gateway.service"
     "casaos-user-service.service"
-    "casaos-local-storage.service"
     "casaos.service"
+    "casaos-local-storage.service"
 )
 
 # 2 Check Distribution
