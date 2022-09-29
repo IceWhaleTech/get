@@ -187,7 +187,7 @@ Check_Arch() {
     CASA_PACKAGES=(
         "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
         "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7-alpha2/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7-snapshot.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7-alpha1/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7-alpha1.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7-alpha2/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7-alpha2.tar.gz"
         "https://github.com/IceWhaleTech/CasaOS/releases/download/v0.3.7-alpha2/linux-${TARGET_ARCH}-casaos-v0.3.7.tar.gz"
         "https://github.com/IceWhaleTech/CasaOS-UI/releases/download/v0.3.6/linux-all-casaos-v0.3.6.tar.gz"
     )
