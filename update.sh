@@ -83,18 +83,15 @@ readonly aCOLOUR=(
 TARGET_ARCH=""
 TARGET_DISTRO="debian"
 TARGET_OS="linux"
-CASA_TAG="v0.3.6"
 TMP_ROOT=/tmp/casaos-installer
 
 
 # PACKAGE LIST OF CASAOS
-
-
-
 CASA_SERVICES=(
     "casaos-gateway.service"
     "casaos-user-service.service"
     "casaos.service"
+    "casaos-local-storage.service"
 )
 
 trap 'onCtrlC' INT
@@ -195,10 +192,11 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-    "https://github.com/IceWhaleTech/CasaOS/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-${CASA_TAG}.tar.gz"
-	"https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-gateway-${CASA_TAG}.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-user-service-${CASA_TAG}.tar.gz"
-	"https://github.com/IceWhaleTech/CasaOS-UI/releases/download/${CASA_TAG}/linux-all-casaos-${CASA_TAG}.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7-alpha3/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7-alpha3.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7-alpha6/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7-alpha6.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS/releases/download/v0.3.7-alpha5/linux-${TARGET_ARCH}-casaos-v0.3.7-alpha5.tar.gz"
+        "https://github.com/zhanghengxin/CasaOS-UI/releases/download/v0.3.7-Developing/linux-all-casaos-v0.3.7.tar.gz"
 )
 }
 
@@ -386,14 +384,6 @@ Configuration_Addons() {
 
 # Download And Install CasaOS
 DownloadAndInstallCasaOS() {
-    # Get the latest version of CasaOS
-    if [[ ! -n "$version" ]]; then
-        CASA_TAG="v$(${NET_GETTER} ${CASA_VERSION_URL})"
-    elif [[ $version == "pre" ]]; then
-        CASA_TAG="$(${NET_GETTER} ${CASA_RELEASE_API} | grep -o '"tag_name": ".*"' | sed 's/"//g' | sed 's/tag_name: //g' | sed -n '1p')"
-    else
-        CASA_TAG="$version"
-    fi
 
     if [ -z "${BUILD_DIR}" ]; then
 
