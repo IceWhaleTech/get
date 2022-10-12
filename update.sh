@@ -192,11 +192,11 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-        "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7-alpha3/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7-alpha3.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7-alpha6/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7-alpha6.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS/releases/download/v0.3.7-alpha5/linux-${TARGET_ARCH}-casaos-v0.3.7-alpha5.tar.gz"
-        "https://github.com/zhanghengxin/CasaOS-UI/releases/download/v0.3.7-Developing/linux-all-casaos-v0.3.7.tar.gz"
+        "见飞书置顶消息 https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
+        "见飞书置顶消息 https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7-alpha3/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7-alpha3.tar.gz"
+        "见飞书置顶消息 https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7-alpha7/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7-alpha7.tar.gz"
+        "见飞书置顶消息 https://github.com/IceWhaleTech/CasaOS/releases/download/v0.3.7-alpha5/linux-${TARGET_ARCH}-casaos-v0.3.7-alpha5.tar.gz"
+        "见飞书置顶消息 https://github.com/zhanghengxin/CasaOS-UI/releases/download/v0.3.7-Developing/linux-all-casaos-v0.3.7.tar.gz"
 )
 }
 
