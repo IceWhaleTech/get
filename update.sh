@@ -351,19 +351,20 @@ Check_Dependency_Installation() {
 Configuration_Addons() {
     Show 2 "Configuration CasaOS Addons"
     #Remove old udev rules
-    if [[ -f $PREFIX/etc/udev/rules.d/11-usb-mount.rules ]]; then
-        ${sudo_cmd} rm -rf $PREFIX/etc/udev/rules.d/11-usb-mount.rules
+    if [[ -f "${PREFIX}/etc/udev/rules.d/11-usb-mount.rules" ]]; then
+        ${sudo_cmd} rm -rf "${PREFIX}/etc/udev/rules.d/11-usb-mount.rules"
     fi
 
-    if [[ -f $PREFIX/etc/systemd/system/usb-mount@.service ]]; then
-        ${sudo_cmd} rm -rf $PREFIX/etc/systemd/system/usb-mount@.service
+    if [[ -f "${PREFIX}/etc/systemd/system/usb-mount@.service" ]]; then
+        ${sudo_cmd} rm -rf "${PREFIX}/etc/systemd/system/usb-mount@.service"
     fi
 
     #Udevil
-    if [[ -f $PREFIX${UDEVIL_CONF_PATH} ]]; then
+    if [[ -f "${PREFIX}${UDEVIL_CONF_PATH}" ]]; then
 
-        #Change udevil mount dir to /DATA
-        ${sudo_cmd} sed -i 's/allowed_media_dirs = \/media\/$USER, \/run\/media\/$USER/allowed_media_dirs = \/DATA, \/DATA\/$USER/g' $PREFIX${UDEVIL_CONF_PATH}
+        # Revert previous CasaOS udevil configuration
+        #shellcheck disable=SC2016
+        ${sudo_cmd} sed -i 's/allowed_media_dirs = \/DATA, \/DATA\/$USER/allowed_media_dirs = \/media, \/media\/$USER, \/run\/media\/$USER/g' "${PREFIX}${UDEVIL_CONF_PATH}"
 
         # GreyStart
         # Add a devmon user
