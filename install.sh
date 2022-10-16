@@ -40,6 +40,9 @@ set -e
 
 ((EUID)) && sudo_cmd="sudo"
 
+# shellcheck source=/dev/null
+source /etc/os-release
+
 readonly TITLE="CasaOS Installer"
 
 # SYSTEM REQUIREMENTS
@@ -54,7 +57,7 @@ readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'w
 readonly PHYSICAL_MEMORY=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
 readonly FREE_DISK_BYTES=$(LC_ALL=C df -P / | tail -n 1 | awk '{print $4}')
 readonly FREE_DISK_GB=$((${FREE_DISK_BYTES} / 1024 / 1024))
-readonly LSB_DIST="$(. /etc/os-release && echo "$ID")"
+readonly LSB_DIST=$( ( [ -n "${ID_LIKE}" ] && echo "${ID_LIKE}" ) || ( [ -n "${ID}" ] && echo "${ID}" ) )
 readonly UNAME_M="$(uname -m)"
 readonly UNAME_U="$(uname -s)"
 readonly NET_GETTER="curl -fsSLk"
