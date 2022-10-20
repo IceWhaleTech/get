@@ -244,7 +244,7 @@ Detecting_CasaOS
 
 while true; do
     echo -n -e "         ${aCOLOUR[4]}Do you want delete all containers? Y/n :${COLOUR_RESET}"
-    read input
+    read -r input
     case $input in
     [yY][eE][sS] | [yY])
         UNINSTALL_ALL_CONTAINER=true
@@ -263,7 +263,7 @@ done
 if [[ ${UNINSTALL_ALL_CONTAINER} == true ]]; then
     while true; do
         echo -n -e "         ${aCOLOUR[4]}Do you want delete all images? Y/n :${COLOUR_RESET}"
-        read input
+        read -r input
         case $input in
         [yY][eE][sS] | [yY])
             REMOVE_IMAGES="all"
@@ -281,7 +281,7 @@ if [[ ${UNINSTALL_ALL_CONTAINER} == true ]]; then
 
     while true; do
         echo -n -e "         ${aCOLOUR[4]}Do you want delete all AppData of CasaOS? Y/n :${COLOUR_RESET}"
-        read input
+        read -r input
         case $input in
         [yY][eE][sS] | [yY])
             REMOVE_APP_DATA=true
@@ -299,7 +299,7 @@ if [[ ${UNINSTALL_ALL_CONTAINER} == true ]]; then
 else
     while true; do
         echo -n -e "         ${aCOLOUR[4]}Do you want to delete all images that are not used by the container? Y/n :${COLOUR_RESET}"
-        read input
+        read -r input
         case $input in
         [yY][eE][sS] | [yY])
             REMOVE_IMAGES="unuse"
