@@ -17,6 +17,7 @@
 set -e
 clear
 
+# shellcheck disable=SC2016
 echo '
    _____                 ____   _____ 
   / ____|               / __ \ / ____|
@@ -39,13 +40,13 @@ readonly CASA_SERVICES=(
     "casaos-gateway.service"
     "casaos-user-service.service"
     "casaos.service"
+    "casaos-local-storage.service"
     "devmon@devmon.service"
 )
 
 readonly CASA_PATH=/casaOS
 readonly CASA_EXEC=casaos
 readonly CASA_BIN=/usr/local/bin/casaos
-readonly CASA_BIN_NEW=/usr/bin/casaos
 readonly CASA_SERVICE_USR=/usr/lib/systemd/system/casaos.service
 readonly CASA_SERVICE_LIB=/lib/systemd/system/casaos.service
 readonly CASA_SERVICE_ETC=/etc/systemd/system/casaos.service
@@ -57,9 +58,10 @@ readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
 readonly MANIFEST=/var/lib/casaos/manifest
 readonly CASA_CONF_PATH_OLD=/etc/casaos.conf
 readonly CASA_CONF_PATH=/etc/casaos
+readonly CASA_RUN_PATH=/var/run/casaos
 readonly CASA_USER_FILES=/var/lib/casaos
 readonly CASA_LOGS_PATH=/var/log/casaos
-readonly CASA_HELPER_PATH=/usr/share/casaos/shell
+readonly CASA_HELPER_PATH=/usr/share/casaos
 
 readonly COLOUR_RESET='\e[0m'
 readonly aCOLOUR=(
@@ -69,11 +71,6 @@ readonly aCOLOUR=(
     '\e[91m'       # Red		| Update notifications Alert
     '\e[33m'       # Yellow		| Emphasis
 )
-
-readonly GREEN_LINE=" ${aCOLOUR[0]}─────────────────────────────────────────────────────$COLOUR_RESET"
-readonly GREEN_BULLET=" ${aCOLOUR[0]}-$COLOUR_RESET"
-readonly GREEN_SEPARATOR="${aCOLOUR[0]}:$COLOUR_RESET"
-readonly PASSED="${aCOLOUR[0]}PASSED$COLOUR_RESET"
 
 UNINSTALL_ALL_CONTAINER=false
 REMOVE_IMAGES="none"
@@ -130,35 +127,20 @@ Detecting_CasaOS() {
 }
 
 Unistall_Container() {
-    Show 2 "Start deleting containers."
     if [[ ${UNINSTALL_ALL_CONTAINER} == true && "$(${sudo_cmd} docker ps -aq)" != "" ]]; then
-        ${sudo_cmd} docker stop $(${sudo_cmd} docker ps -aq)
-        ${sudo_cmd} docker rm $(${sudo_cmd} docker ps -aq)
-        if [[ $? -ne 0 ]]; then
-            Show 1 "Failed to delete all containers."
-        else
-            Show 0 "Successfully deleted all containers."
-        fi
+        Show 2 "Start deleting containers."
+        ${sudo_cmd} docker stop "$(${sudo_cmd} docker ps -aq)" || Show 1 "Failed to stop containers."
+        ${sudo_cmd} docker rm "$(${sudo_cmd} docker ps -aq)" || Show 1 "Failed to delete all containers."
     fi
 }
 
 Remove_Images() {
     if [[ ${REMOVE_IMAGES} == "all" && "$(${sudo_cmd} docker images -q)" != "" ]]; then
         Show 2 "Start deleting all images."
-        ${sudo_cmd} docker rmi $(${sudo_cmd} docker images -q)
-        if [[ $? -ne 0 ]]; then
-            Show 1 "Failed to delete all images."
-        else
-            Show 0 "Successfully deleted all images."
-        fi
+        ${sudo_cmd} docker rmi "$(${sudo_cmd} docker images -q)" || Show 1 "Failed to delete all images."
     elif [[ ${REMOVE_IMAGES} == "unuse" && "$(${sudo_cmd} docker images -q)" != "" ]]; then
         Show 2 "Start deleting unuse images."
-        ${sudo_cmd} docker image prune -af
-        if [[ $? -ne 0 ]]; then
-            Show 1 "Failed to delete unuse images."
-        else
-            Show 0 "Successfully deleted all images that are not used by the container."
-        fi
+        ${sudo_cmd} docker image prune -af || Show 1 "Failed to delete unuse images."
     fi
 }
 
@@ -185,12 +167,7 @@ Uninstall_Casaos() {
 
     # Old Casa Files
     if [[ -d ${CASA_PATH} ]]; then
-        ${sudo_cmd} rm -rf ${CASA_PATH}
-        if [[ $? -ne 0 ]]; then
-            Show 1 "Failed to delete CasaOS files."
-        else
-            Show 0 "Successfully deleted CasaOS files."
-        fi
+        ${sudo_cmd} rm -rf ${CASA_PATH} || Show 1 "Failed to delete CasaOS files."
     fi
 
     if [[ -f ${CASA_ADDON1} ]]; then
@@ -202,12 +179,7 @@ Uninstall_Casaos() {
     fi
 
     if [[ -f ${CASA_BIN} ]]; then
-        ${sudo_cmd} rm -rf ${CASA_BIN}
-        if [[ $? -ne 0 ]]; then
-            Show 1 "Failed to delete CasaOS exec file."
-        else
-            Show 0 "Successfully deleted CasaOS exec file."
-        fi
+        ${sudo_cmd} rm -rf ${CASA_BIN} || Show 1 "Failed to delete CasaOS exec file."
     fi
 
     # New Casa Files
@@ -217,16 +189,21 @@ Uninstall_Casaos() {
     fi
 
     if [[ -f ${MANIFEST} ]]; then
-        ${sudo_cmd} cat ${MANIFEST} | while read line; do
+        ${sudo_cmd} cat ${MANIFEST} | while read -r line; do
             if [[ -f ${line} ]]; then
-                ${sudo_cmd} rm -rf ${line}
+                ${sudo_cmd} rm -rf "${line}"
             fi
         done
     fi
 
     if [[ -d ${CASA_USER_FILES} ]]; then
-        ${sudo_cmd} rm -rf ${CASA_USER_FILES}
+        ${sudo_cmd} rm -rf ${CASA_USER_FILES}/[0-9]*
+        ${sudo_cmd} rm -rf ${CASA_USER_FILES}/db
+        ${sudo_cmd} rm -rf ${CASA_USER_FILES}/*.db
     fi
+
+    ${sudo_cmd} rm -rf ${CASA_USER_FILES}/www
+    ${sudo_cmd} rm -rf ${CASA_USER_FILES}/migration
 
     if [[ -d ${CASA_HELPER_PATH} ]]; then
         ${sudo_cmd} rm -rf ${CASA_HELPER_PATH}
@@ -237,16 +214,15 @@ Uninstall_Casaos() {
     fi
 
     if [[ ${REMOVE_APP_DATA} = true ]]; then
-        $sudo_cmd rm -fr /DATA/AppData
-        if [[ $? -ne 0 ]]; then
-            Show 1 "Failed to delete AppData."
-        else
-            Show 0 "Successfully deleted AppData."
-        fi
+        $sudo_cmd rm -fr /DATA/AppData || Show 1 "Failed to delete AppData."
     fi
 
     if [[ -d ${CASA_CONF_PATH} ]]; then
         ${sudo_cmd} rm -rf ${CASA_CONF_PATH}
+    fi
+
+    if [[ -d ${CASA_RUN_PATH} ]]; then
+        ${sudo_cmd} rm -rf ${CASA_RUN_PATH}
     fi
 
     if [[ -f ${CASA_UNINSTALL_PATH} ]]; then
@@ -256,9 +232,9 @@ Uninstall_Casaos() {
 }
 
 # Check user
-if [ `id -u` -ne 0 ];then
-	Show 1 "Please execute with a root user, or use ${aCOLOUR[4]}sudo casaos-uninstall${COLOUR_RESET}."
-   exit 1
+if [ "$(id -u)" -ne 0 ];then
+    Show 1 "Please execute with a root user, or use ${aCOLOUR[4]}sudo casaos-uninstall${COLOUR_RESET}."
+    exit 1
 fi
 
 
@@ -268,7 +244,7 @@ Detecting_CasaOS
 
 while true; do
     echo -n -e "         ${aCOLOUR[4]}Do you want delete all containers? Y/n :${COLOUR_RESET}"
-    read input
+    read -r input
     case $input in
     [yY][eE][sS] | [yY])
         UNINSTALL_ALL_CONTAINER=true
@@ -287,7 +263,7 @@ done
 if [[ ${UNINSTALL_ALL_CONTAINER} == true ]]; then
     while true; do
         echo -n -e "         ${aCOLOUR[4]}Do you want delete all images? Y/n :${COLOUR_RESET}"
-        read input
+        read -r input
         case $input in
         [yY][eE][sS] | [yY])
             REMOVE_IMAGES="all"
@@ -305,7 +281,7 @@ if [[ ${UNINSTALL_ALL_CONTAINER} == true ]]; then
 
     while true; do
         echo -n -e "         ${aCOLOUR[4]}Do you want delete all AppData of CasaOS? Y/n :${COLOUR_RESET}"
-        read input
+        read -r input
         case $input in
         [yY][eE][sS] | [yY])
             REMOVE_APP_DATA=true
@@ -323,7 +299,7 @@ if [[ ${UNINSTALL_ALL_CONTAINER} == true ]]; then
 else
     while true; do
         echo -n -e "         ${aCOLOUR[4]}Do you want to delete all images that are not used by the container? Y/n :${COLOUR_RESET}"
-        read input
+        read -r input
         case $input in
         [yY][eE][sS] | [yY])
             REMOVE_IMAGES="unuse"

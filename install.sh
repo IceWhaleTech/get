@@ -9,9 +9,9 @@
 #   This script installs CasaOS to your system.
 #   Usage:
 #
-#   	$ curl -fsSL https://get.casaos.io | bash
+#   	$ curl -fsSL https://get.casaos.io | sudo bash
 #   	  or
-#   	$ wget -qO- https://get.casaos.io | bash
+#   	$ wget -qO- https://get.casaos.io | sudo bash
 #
 #   In automated environments, you may want to run as root.
 #   If using curl, we recommend using the -fsSL flags.
@@ -21,6 +21,8 @@
 #
 clear
 echo -e "\e[0m\c"
+
+# shellcheck disable=SC2016
 echo '
    _____                 ____   _____ 
   / ____|               / __ \ / ____|
@@ -40,29 +42,39 @@ set -e
 
 ((EUID)) && sudo_cmd="sudo"
 
+# shellcheck source=/dev/null
+source /etc/os-release
+
 readonly TITLE="CasaOS Installer"
 
 # SYSTEM REQUIREMENTS
 readonly MINIMUM_DISK_SIZE_GB="5"
 readonly MINIMUM_MEMORY="400"
 readonly MINIMUM_DOCER_VERSION="20"
-readonly SUPPORTED_DIST=('debian' 'ubuntu' 'raspbian')
 readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'whiptail' 'udevil' 'samba' 'cifs-utils')
 readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'whiptail' 'udevil' 'samba' 'mount.cifs')
 
 # SYSTEM INFO
-readonly PHYSICAL_MEMORY=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
-readonly FREE_DISK_BYTES=$(LC_ALL=C df -P / | tail -n 1 | awk '{print $4}')
-readonly FREE_DISK_GB=$((${FREE_DISK_BYTES} / 1024 / 1024))
-readonly LSB_DIST="$(. /etc/os-release && echo "$ID")"
-readonly UNAME_M="$(uname -m)"
-readonly UNAME_U="$(uname -s)"
-readonly NET_GETTER="curl -fsSLk"
+PHYSICAL_MEMORY=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
+readonly PHYSICAL_MEMORY
+
+FREE_DISK_BYTES=$(LC_ALL=C df -P / | tail -n 1 | awk '{print $4}')
+readonly FREE_DISK_BYTES
+
+readonly FREE_DISK_GB=$((FREE_DISK_BYTES / 1024 / 1024))
+
+LSB_DIST=$( ( [ -n "${ID_LIKE}" ] && echo "${ID_LIKE}" ) || ( [ -n "${ID}" ] && echo "${ID}" ) )
+readonly LSB_DIST
+
+UNAME_M="$(uname -m)"
+readonly UNAME_M
+
+UNAME_U="$(uname -s)"
+readonly UNAME_U
 
 readonly CASA_CONF_PATH=/etc/casaos/gateway.ini
 readonly CASA_UNINSTALL_URL="https://raw.githubusercontent.com/IceWhaleTech/get/main/uninstall.sh"
 readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
-readonly CASA_VERSION_URL="https://api.casaos.io/casaos-api/version"
 
 # REQUIREMENTS CONF PATH
 # Udevil
@@ -81,13 +93,9 @@ readonly aCOLOUR=(
 readonly GREEN_LINE=" ${aCOLOUR[0]}─────────────────────────────────────────────────────$COLOUR_RESET"
 readonly GREEN_BULLET=" ${aCOLOUR[0]}-$COLOUR_RESET"
 readonly GREEN_SEPARATOR="${aCOLOUR[0]}:$COLOUR_RESET"
-readonly PASSED="${aCOLOUR[0]}PASSED$COLOUR_RESET"
 
 # CASAOS VARIABLES
 TARGET_ARCH=""
-TARGET_DISTRO="debian"
-TARGET_OS="linux"
-CASA_TAG="v0.3.6-alpha5"
 TMP_ROOT=/tmp/casaos-installer
 
 trap 'onCtrlC' INT
@@ -147,7 +155,9 @@ Clear_Term() {
     [[ -t 0 ]] || return
 
     # Printing terminal height - 1 newlines seems to be the fastest method that is compatible with all terminal types.
-    local lines=$(tput lines) i newlines
+    lines=$(tput lines) i newlines
+    local lines
+
     for ((i = 1; i < ${lines% *}; i++)); do newlines+='\n'; done
     echo -ne "\e[0m$newlines\e[H"
 
@@ -186,18 +196,19 @@ Check_Arch() {
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
         "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-user-service-v0.3.6.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-v0.3.6.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UI/releases/download/v0.3.6/linux-all-casaos-v0.3.6.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-v0.3.7.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-UI/releases/download/v0.3.7/linux-all-casaos-v0.3.7.tar.gz"
     )
 }
 
-# PACKAGE LIST OF CASAOS
-
+# PACKAGE LIST OF CASAOS (make sure the services are in the right order)
 CASA_SERVICES=(
     "casaos-gateway.service"
     "casaos-user-service.service"
     "casaos.service"
+    "casaos-local-storage.service"
 )
 
 # 2 Check Distribution
@@ -206,13 +217,10 @@ Check_Distribution() {
     notice=""
     case $LSB_DIST in
     *debian*)
-        TARGET_DISTRO="debian"
         ;;
     *ubuntu*)
-        TARGET_DISTRO="ubuntu"
         ;;
     *raspbian*)
-        TARGET_DISTRO="raspbian"
         ;;
     *openwrt*)
         Show 1 "Aborted, OpenWrt cannot be installed using this script, please visit ${CASA_OPENWRT_DOCS}."
@@ -223,7 +231,6 @@ Check_Distribution() {
         exit 1
         ;;
     *trisquel*)
-        Target_Distro="debian"
         ;;
     *)
         sType=1
@@ -244,10 +251,9 @@ Check_Distribution() {
 # 3 Check OS
 Check_OS() {
     if [[ $UNAME_U == *Linux* ]]; then
-        TARGET_OS="linux"
         Show 0 "Your System is : $UNAME_U"
     else
-        TARGET_OS 1 "This script is only for Linux."
+        Show 1 "This script is only for Linux."
         exit 1
     fi
 }
@@ -290,9 +296,9 @@ Check_Port() {
 # Get an available port
 Get_Port() {
     CurrentPort=$(${sudo_cmd} cat ${CASA_CONF_PATH} | grep HttpPort | awk '{print $3}')
-    if [[ $CurrentPort == $Port ]]; then
+    if [[ $CurrentPort == "$Port" ]]; then
         for PORT in {80..65536}; do
-            if [[ $(Check_Port $PORT) == 0 ]]; then
+            if [[ $(Check_Port "$PORT") == 0 ]]; then
                 Port=$PORT
                 break
             fi
@@ -324,24 +330,24 @@ Update_Package_Resource() {
 Install_Depends() {
     for ((i = 0; i < ${#CASA_DEPANDS_COMMAND[@]}; i++)); do
         cmd=${CASA_DEPANDS_COMMAND[i]}
-        if [[ ! -x "$(${sudo_cmd} which $cmd)" ]]; then
+        if [[ ! -x $(${sudo_cmd} which "$cmd") ]]; then
             packagesNeeded=${CASA_DEPANDS_PACKAGE[i]}
             Show 2 "Install the necessary dependencies: \e[33m$packagesNeeded \e[0m"
             GreyStart
             if [ -x "$(command -v apk)" ]; then
-                ${sudo_cmd} apk add --no-cache $packagesNeeded
+                ${sudo_cmd} apk add --no-cache "$packagesNeeded"
             elif [ -x "$(command -v apt-get)" ]; then
-                ${sudo_cmd} apt-get -y -q install $packagesNeeded --no-upgrade
+                ${sudo_cmd} apt-get -y -q install "$packagesNeeded" --no-upgrade
             elif [ -x "$(command -v dnf)" ]; then
-                ${sudo_cmd} dnf install $packagesNeeded
+                ${sudo_cmd} dnf install "$packagesNeeded"
             elif [ -x "$(command -v zypper)" ]; then
-                ${sudo_cmd} zypper install $packagesNeeded
+                ${sudo_cmd} zypper install "$packagesNeeded"
             elif [ -x "$(command -v yum)" ]; then
-                ${sudo_cmd} yum install $packagesNeeded
+                ${sudo_cmd} yum install "$packagesNeeded"
             elif [ -x "$(command -v pacman)" ]; then
-                ${sudo_cmd} pacman -S $packagesNeeded
+                ${sudo_cmd} pacman -S "$packagesNeeded"
             elif [ -x "$(command -v paru)" ]; then
-                ${sudo_cmd} paru -S $packagesNeeded
+                ${sudo_cmd} paru -S "$packagesNeeded"
             else
                 Show 1 "Package manager not found. You must manually install: \e[33m$packagesNeeded \e[0m"
             fi
@@ -353,7 +359,7 @@ Install_Depends() {
 Check_Dependency_Installation() {
     for ((i = 0; i < ${#CASA_DEPANDS_COMMAND[@]}; i++)); do
         cmd=${CASA_DEPANDS_COMMAND[i]}
-        if [[ ! -x "$(${sudo_cmd} which $cmd)" ]]; then
+        if [[ ! -x $(${sudo_cmd} which "$cmd") ]]; then
             packagesNeeded=${CASA_DEPANDS_PACKAGE[i]}
             Show 1 "Dependency \e[33m$packagesNeeded \e[0m installation failed, please try again manually!"
             exit 1
@@ -428,19 +434,16 @@ Install_Docker() {
 Configuration_Addons() {
     Show 2 "Configuration CasaOS Addons"
     #Remove old udev rules
-    if [[ -f $PREFIX/etc/udev/rules.d/11-usb-mount.rules ]]; then
-        ${sudo_cmd} rm -rf $PREFIX/etc/udev/rules.d/11-usb-mount.rules
+    if [[ -f "${PREFIX}/etc/udev/rules.d/11-usb-mount.rules" ]]; then
+        ${sudo_cmd} rm -rf "${PREFIX}/etc/udev/rules.d/11-usb-mount.rules"
     fi
 
-    if [[ -f $PREFIX/etc/systemd/system/usb-mount@.service ]]; then
-        ${sudo_cmd} rm -rf $PREFIX/etc/systemd/system/usb-mount@.service
+    if [[ -f "${PREFIX}/etc/systemd/system/usb-mount@.service" ]]; then
+        ${sudo_cmd} rm -rf "${PREFIX}/etc/systemd/system/usb-mount@.service"
     fi
 
     #Udevil
     if [[ -f $PREFIX${UDEVIL_CONF_PATH} ]]; then
-
-        #Change udevil mount dir to /DATA
-        ${sudo_cmd} sed -i 's/allowed_media_dirs = \/media\/$USER, \/run\/media\/$USER/allowed_media_dirs = \/DATA, \/DATA\/$USER/g' $PREFIX${UDEVIL_CONF_PATH}
 
         # GreyStart
         # Add a devmon user
@@ -461,17 +464,6 @@ Configuration_Addons() {
 
 # Download And Install CasaOS
 DownloadAndInstallCasaOS() {
-    # Get the latest version of CasaOS
-    if [[ ! -n "$version" ]]; then
-        CASA_TAG="v$(${NET_GETTER} ${CASA_VERSION_URL})"
-    elif [[ $version == "pre" ]]; then
-        CASA_TAG="$(${NET_GETTER} ${CASA_RELEASE_API} | grep -o '"tag_name": ".*"' | sed 's/"//g' | sed 's/tag_name: //g' | sed -n '1p')"
-    else
-        CASA_TAG="$version"
-    fi
-
-    # CASA_TAG="v0.3.6-alpha2"
-    
     if [ -z "${BUILD_DIR}" ]; then
         ${sudo_cmd} rm -rf ${TMP_ROOT}
         mkdir -p ${TMP_ROOT} || Show 1 "Failed to create temporary directory"
@@ -538,14 +530,14 @@ DownloadAndInstallCasaOS() {
 
     #Download Uninstall Script
     if [[ -f $PREFIX/tmp/casaos-uninstall ]]; then
-        ${sudo_cmd} rm -rf $PREFIX/tmp/casaos-uninstall
+        ${sudo_cmd} rm -rf "$PREFIX/tmp/casaos-uninstall"
     fi
     ${sudo_cmd} curl -fsSLk "$CASA_UNINSTALL_URL" >"$PREFIX/tmp/casaos-uninstall"
-    ${sudo_cmd} cp -rf "$PREFIX/tmp/casaos-uninstall" $CASA_UNINSTALL_PATH
-    if [[ $? -ne 0 ]]; then
+    ${sudo_cmd} cp -rf "$PREFIX/tmp/casaos-uninstall" $CASA_UNINSTALL_PATH || {
         Show 1 "Download uninstall script failed, Please check if your internet connection is working and retry."
         exit 1
-    fi
+    }
+
     ${sudo_cmd} chmod +x $CASA_UNINSTALL_PATH
     
     for SERVICE in "${CASA_SERVICES[@]}"; do
@@ -564,7 +556,7 @@ Clean_Temp_Files() {
 Check_Service_status() {
     for SERVICE in "${CASA_SERVICES[@]}"; do
         Show 2 "Checking ${SERVICE}..."
-        if [[ $(${sudo_cmd} systemctl is-active ${SERVICE}) == "active" ]]; then
+        if [[ $(${sudo_cmd} systemctl is-active "${SERVICE}") == "active" ]]; then
             Show 0 "${SERVICE} is running."
         else
             Show 1 "${SERVICE} is not running, Please reinstall."
@@ -578,7 +570,7 @@ Get_IPs() {
     PORT=$(${sudo_cmd} cat ${CASA_CONF_PATH} | grep port | sed 's/port=//')
     ALL_NIC=$($sudo_cmd ls /sys/class/net/ | grep -v "$(ls /sys/devices/virtual/net/)")
     for NIC in ${ALL_NIC}; do
-        IP=$($sudo_cmd ifconfig ${NIC} | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}' | tr -d "addr:")
+        IP=$($sudo_cmd ifconfig "${NIC}" | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk '{print $2}' | sed -e 's/addr://g')
         if [[ -n $IP ]]; then
             if [[ "$PORT" -eq "80" ]]; then
                 echo -e "${GREEN_BULLET} http://$IP (${NIC})"
@@ -591,8 +583,10 @@ Get_IPs() {
 
 # Show Welcome Banner
 Welcome_Banner() {
+    CASA_TAG=$(casaos -v)
+
     echo -e "${GREEN_LINE}${aCOLOUR[1]}"
-    echo -e " CasaOS ${Casa_Tag}${COLOUR_RESET} is running at${COLOUR_RESET}${GREEN_SEPARATOR}"
+    echo -e " CasaOS ${CASA_TAG}${COLOUR_RESET} is running at${COLOUR_RESET}${GREEN_SEPARATOR}"
     echo -e "${GREEN_LINE}"
     Get_IPs
     echo -e " Open your browser and visit the above address."
@@ -617,23 +611,22 @@ usage() {
     cat <<-EOF
 		Usage: install.sh [options]
 		Valid options are:
-		    -v <version>            Specify version to install For example: install.sh -v v0.3.6 or install.sh (Only versions after 0.3.6 can be installed)
 		    -p <build_dir>          Specify build directory (Local install)
 		    -h                      Show this help message and exit
 	EOF
-    exit $1
+    exit "$1"
 }
 
-while getopts ":v:p:h" arg; do
+while getopts ":p:h" arg; do
     case "$arg" in
-    v)
-        version=$OPTARG
-        ;;
     p)
         BUILD_DIR=$OPTARG
         ;;
     h)
         usage 0
+        ;;
+    *)
+        usage 1
         ;;
     esac
 done

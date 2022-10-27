@@ -9,9 +9,9 @@
 #   This script installs CasaOS to your system.
 #   Usage:
 #
-#   	$ curl -fsSL https://get.casaos.io | bash
+#   	$ curl -fsSL https://get.casaos.io | sudo bash
 #   	  or
-#   	$ wget -qO- https://get.casaos.io | bash
+#   	$ wget -qO- https://get.casaos.io | sudo bash
 #
 #   In automated environments, you may want to run as root.
 #   If using curl, we recommend using the -fsSL flags.
@@ -21,7 +21,7 @@
 #
 
 
-
+# shellcheck disable=SC2016
 echo '
    _____                 ____   _____ 
   / ____|               / __ \ / ____|
@@ -41,26 +41,35 @@ set -e
 
 ((EUID)) && sudo_cmd="sudo"
 
-readonly TITLE="CasaOS Installer"
+# shellcheck source=/dev/null
+source /etc/os-release
+
+readonly TITLE="CasaOS Updater"
 
 # SYSTEM REQUIREMENTS
 readonly MINIMUM_DISK_SIZE_GB="5"
 readonly MINIMUM_MEMORY="400"
-readonly MINIMUM_DOCER_VERSION="20"
-readonly SUPPORTED_DIST=('debian' 'ubuntu' 'raspbian')
 readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'whiptail' 'udevil' 'samba' 'cifs-utils')
 readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'whiptail' 'udevil' 'samba' 'mount.cifs')
 
 # SYSTEM INFO
-readonly PHYSICAL_MEMORY=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
-readonly FREE_DISK_BYTES=$(LC_ALL=C df -P / | tail -n 1 | awk '{print $4}')
-readonly FREE_DISK_GB=$((${FREE_DISK_BYTES} / 1024 / 1024))
-readonly LSB_DIST="$(. /etc/os-release && echo "$ID")"
-readonly UNAME_M="$(uname -m)"
-readonly UNAME_U="$(uname -s)"
-readonly NET_GETTER="curl -fsSLk"
+PHYSICAL_MEMORY=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
+readonly PHYSICAL_MEMORY
 
-readonly CASA_VERSION_URL="https://api.casaos.io/casaos-api/version"
+FREE_DISK_BYTES=$(LC_ALL=C df -P / | tail -n 1 | awk '{print $4}')
+readonly FREE_DISK_BYTES
+
+readonly FREE_DISK_GB=$((FREE_DISK_BYTES / 1024 / 1024))
+
+LSB_DIST=$( ( [ -n "${ID_LIKE}" ] && echo "${ID_LIKE}" ) || ( [ -n "${ID}" ] && echo "${ID}" ) )
+readonly LSB_DIST
+
+UNAME_M="$(uname -m)"
+readonly UNAME_M
+
+UNAME_U="$(uname -s)"
+readonly UNAME_U
+
 readonly CASA_UNINSTALL_URL="https://raw.githubusercontent.com/IceWhaleTech/get/main/uninstall.sh"
 readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
 
@@ -81,20 +90,15 @@ readonly aCOLOUR=(
 
 # CASAOS VARIABLES
 TARGET_ARCH=""
-TARGET_DISTRO="debian"
-TARGET_OS="linux"
-CASA_TAG="v0.3.6"
 TMP_ROOT=/tmp/casaos-installer
 
 
 # PACKAGE LIST OF CASAOS
-
-
-
 CASA_SERVICES=(
     "casaos-gateway.service"
     "casaos-user-service.service"
     "casaos.service"
+    "casaos-local-storage.service"
 )
 
 trap 'onCtrlC' INT
@@ -195,11 +199,12 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-    "https://github.com/IceWhaleTech/CasaOS/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-${CASA_TAG}.tar.gz"
-	"https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-gateway-${CASA_TAG}.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/${CASA_TAG}/linux-${TARGET_ARCH}-casaos-user-service-${CASA_TAG}.tar.gz"
-	"https://github.com/IceWhaleTech/CasaOS-UI/releases/download/${CASA_TAG}/linux-all-casaos-${CASA_TAG}.tar.gz"
-)
+        "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-v0.3.7.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-UI/releases/download/v0.3.7/linux-all-casaos-v0.3.7.tar.gz"
+    )
 }
 
 # 2 Check Distribution
@@ -208,13 +213,10 @@ Check_Distribution() {
     notice=""
     case $LSB_DIST in
     *debian*)
-        TARGET_DISTRO="debian"
         ;;
     *ubuntu*)
-        TARGET_DISTRO="ubuntu"
         ;;
     *raspbian*)
-        TARGET_DISTRO="raspbian"
         ;;
     *openwrt*)
         Show 1 "Aborted, OpenWrt cannot be installed using this script, please visit ${CASA_OPENWRT_DOCS}."
@@ -225,7 +227,6 @@ Check_Distribution() {
         exit 1
         ;;
     *trisquel*)
-        Target_Distro="debian"
         ;;
     *)
         sType=1
@@ -246,10 +247,9 @@ Check_Distribution() {
 # 3 Check OS
 Check_OS() {
     if [[ $UNAME_U == *Linux* ]]; then
-        TARGET_OS="linux"
         Show 0 "Your System is : $UNAME_U"
     else
-        TARGET_OS 1 "This script is only for Linux."
+        Show 1 "This script is only for Linux."
         exit 1
     fi
 }
@@ -311,24 +311,24 @@ Update_Package_Resource() {
 Install_Depends() {
     for ((i = 0; i < ${#CASA_DEPANDS_COMMAND[@]}; i++)); do
         cmd=${CASA_DEPANDS_COMMAND[i]}
-        if [[ ! -x "$(command -v $cmd)" ]]; then
+        if [[ ! -x $(command -v "${cmd}") ]]; then
             packagesNeeded=${CASA_DEPANDS_PACKAGE[i]}
             Show 2 "Install the necessary dependencies: $packagesNeeded "
             GreyStart
             if [ -x "$(command -v apk)" ]; then
-                ${sudo_cmd} apk add --no-cache $packagesNeeded
+                ${sudo_cmd} apk add --no-cache "$packagesNeeded"
             elif [ -x "$(command -v apt-get)" ]; then
-                ${sudo_cmd} apt-get -y -q install $packagesNeeded --no-upgrade
+                ${sudo_cmd} apt-get -y -q install "$packagesNeeded" --no-upgrade
             elif [ -x "$(command -v dnf)" ]; then
-                ${sudo_cmd} dnf install $packagesNeeded
+                ${sudo_cmd} dnf install "$packagesNeeded"
             elif [ -x "$(command -v zypper)" ]; then
-                ${sudo_cmd} zypper install $packagesNeeded
+                ${sudo_cmd} zypper install "$packagesNeeded"
             elif [ -x "$(command -v yum)" ]; then
-                ${sudo_cmd} yum install $packagesNeeded
+                ${sudo_cmd} yum install "$packagesNeeded"
             elif [ -x "$(command -v pacman)" ]; then
-                ${sudo_cmd} pacman -S $packagesNeeded
+                ${sudo_cmd} pacman -S "$packagesNeeded"
             elif [ -x "$(command -v paru)" ]; then
-                ${sudo_cmd} paru -S $packagesNeeded
+                ${sudo_cmd} paru -S "$packagesNeeded"
             else
                 Show 1 "Package manager not found. You must manually install: $packagesNeeded"
             fi
@@ -340,7 +340,7 @@ Install_Depends() {
 Check_Dependency_Installation() {
     for ((i = 0; i < ${#CASA_DEPANDS_COMMAND[@]}; i++)); do
         cmd=${CASA_DEPANDS_COMMAND[i]}
-        if [[ ! -x "$(command -v $cmd)" ]]; then
+        if [[ ! -x $(command -v "${cmd}") ]]; then
             packagesNeeded=${CASA_DEPANDS_PACKAGE[i]}
             Show 1 "Dependency \e[33m$packagesNeeded \e[0m installation failed, please try again manually!"
             exit 1
@@ -353,19 +353,20 @@ Check_Dependency_Installation() {
 Configuration_Addons() {
     Show 2 "Configuration CasaOS Addons"
     #Remove old udev rules
-    if [[ -f $PREFIX/etc/udev/rules.d/11-usb-mount.rules ]]; then
-        ${sudo_cmd} rm -rf $PREFIX/etc/udev/rules.d/11-usb-mount.rules
+    if [[ -f "${PREFIX}/etc/udev/rules.d/11-usb-mount.rules" ]]; then
+        ${sudo_cmd} rm -rf "${PREFIX}/etc/udev/rules.d/11-usb-mount.rules"
     fi
 
-    if [[ -f $PREFIX/etc/systemd/system/usb-mount@.service ]]; then
-        ${sudo_cmd} rm -rf $PREFIX/etc/systemd/system/usb-mount@.service
+    if [[ -f "${PREFIX}/etc/systemd/system/usb-mount@.service" ]]; then
+        ${sudo_cmd} rm -rf "${PREFIX}/etc/systemd/system/usb-mount@.service"
     fi
 
     #Udevil
-    if [[ -f $PREFIX${UDEVIL_CONF_PATH} ]]; then
+    if [[ -f "${PREFIX}${UDEVIL_CONF_PATH}" ]]; then
 
-        #Change udevil mount dir to /DATA
-        ${sudo_cmd} sed -i 's/allowed_media_dirs = \/media\/$USER, \/run\/media\/$USER/allowed_media_dirs = \/DATA, \/DATA\/$USER/g' $PREFIX${UDEVIL_CONF_PATH}
+        # Revert previous CasaOS udevil configuration
+        #shellcheck disable=SC2016
+        ${sudo_cmd} sed -i 's/allowed_media_dirs = \/DATA, \/DATA\/$USER/allowed_media_dirs = \/media, \/media\/$USER, \/run\/media\/$USER/g' "${PREFIX}${UDEVIL_CONF_PATH}"
 
         # GreyStart
         # Add a devmon user
@@ -386,14 +387,6 @@ Configuration_Addons() {
 
 # Download And Install CasaOS
 DownloadAndInstallCasaOS() {
-    # Get the latest version of CasaOS
-    if [[ ! -n "$version" ]]; then
-        CASA_TAG="v$(${NET_GETTER} ${CASA_VERSION_URL})"
-    elif [[ $version == "pre" ]]; then
-        CASA_TAG="$(${NET_GETTER} ${CASA_RELEASE_API} | grep -o '"tag_name": ".*"' | sed 's/"//g' | sed 's/tag_name: //g' | sed -n '1p')"
-    else
-        CASA_TAG="$version"
-    fi
 
     if [ -z "${BUILD_DIR}" ]; then
 
@@ -455,15 +448,15 @@ DownloadAndInstallCasaOS() {
     done
     
     #Download Uninstall Script
-    if [[ -f $PREFIX/tmp/casaos-uninstall ]]; then
-        ${sudo_cmd} rm -rf $PREFIX/tmp/casaos-uninstall
+    if [[ -f ${PREFIX}/tmp/casaos-uninstall ]]; then
+        ${sudo_cmd} rm -rf "${PREFIX}/tmp/casaos-uninstall"
     fi
-    ${sudo_cmd} curl -fsSLk "$CASA_UNINSTALL_URL" >"$PREFIX/tmp/casaos-uninstall"
-    ${sudo_cmd} cp -rvf "$PREFIX/tmp/casaos-uninstall" $CASA_UNINSTALL_PATH
-    if [[ $? -ne 0 ]]; then
+    ${sudo_cmd} curl -fsSLk "$CASA_UNINSTALL_URL" >"${PREFIX}/tmp/casaos-uninstall"
+    ${sudo_cmd} cp -rvf "${PREFIX}/tmp/casaos-uninstall" $CASA_UNINSTALL_PATH || {
         Show 1 "Download uninstall script failed, Please check if your internet connection is working and retry."
         exit 1
-    fi
+    }
+
     ${sudo_cmd} chmod +x $CASA_UNINSTALL_PATH
     
     ## Special markings
@@ -488,23 +481,22 @@ usage() {
     cat <<-EOF
 		Usage: get.sh [options]
 		Valid options are:
-		    -v <version>            Specify version to install For example: get.sh -v v0.2.3 | get.sh -v pre | get.sh
 		    -p <builddir>           Specify build directory
 		    -h                      Show this help message and exit
 	EOF
-    exit $1
+    exit "$1"
 }
 
-while getopts ":v:p:h" arg; do
+while getopts ":p:h" arg; do
     case "$arg" in
-    v)
-        version=$OPTARG
-        ;;
     p)
         BUILD_DIR=$OPTARG
         ;;
     h)
         usage 0
+        ;;
+    *)
+        usage 1
         ;;
     esac
 done
