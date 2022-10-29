@@ -197,7 +197,7 @@ Check_Arch() {
     CASA_PACKAGES=(
         "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
         "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7-1/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7-1.tar.gz"
         "https://github.com/IceWhaleTech/CasaOS/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-v0.3.7.tar.gz"
         "https://github.com/IceWhaleTech/CasaOS-UI/releases/download/v0.3.7/linux-all-casaos-v0.3.7.tar.gz"
     )
@@ -207,8 +207,8 @@ Check_Arch() {
 CASA_SERVICES=(
     "casaos-gateway.service"
     "casaos-user-service.service"
-    "casaos.service"
     "casaos-local-storage.service"
+    "casaos.service"  # must be the last one so update from UI can work
 )
 
 # 2 Check Distribution
