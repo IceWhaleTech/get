@@ -34,6 +34,8 @@ echo '
    --- Made by IceWhale with YOU ---
 '
 export PATH=/usr/sbin:$PATH
+export DEBIAN_FRONTEND=noninteractive
+
 set -e
 
 ###############################################################################
@@ -45,14 +47,12 @@ set -e
 # shellcheck source=/dev/null
 source /etc/os-release
 
-readonly TITLE="CasaOS Installer"
-
 # SYSTEM REQUIREMENTS
 readonly MINIMUM_DISK_SIZE_GB="5"
 readonly MINIMUM_MEMORY="400"
 readonly MINIMUM_DOCER_VERSION="20"
-readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'whiptail' 'udevil' 'samba' 'cifs-utils')
-readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'whiptail' 'udevil' 'samba' 'mount.cifs')
+readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'udevil' 'samba' 'cifs-utils')
+readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'udevil' 'samba' 'mount.cifs')
 
 # SYSTEM INFO
 PHYSICAL_MEMORY=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
@@ -63,7 +63,7 @@ readonly FREE_DISK_BYTES
 
 readonly FREE_DISK_GB=$((FREE_DISK_BYTES / 1024 / 1024))
 
-LSB_DIST=$( ( [ -n "${ID_LIKE}" ] && echo "${ID_LIKE}" ) || ( [ -n "${ID}" ] && echo "${ID}" ) )
+LSB_DIST=$( ([ -n "${ID_LIKE}" ] && echo "${ID_LIKE}") || ([ -n "${ID}" ] && echo "${ID}"))
 readonly LSB_DIST
 
 UNAME_M="$(uname -m)"
@@ -97,6 +97,7 @@ readonly GREEN_SEPARATOR="${aCOLOUR[0]}:$COLOUR_RESET"
 # CASAOS VARIABLES
 TARGET_ARCH=""
 TMP_ROOT=/tmp/casaos-installer
+CASA_DOWNLOAD_DOMAIN="https://github.com/"
 
 trap 'onCtrlC' INT
 onCtrlC() {
@@ -176,6 +177,19 @@ exist_file() {
 # FUNCTIONS                                                                   #
 ###############################################################################
 
+# 0 Get download url domain
+# To solve the problem that Chinese users cannot access github.
+Get_Download_Url_Domain() {
+    # Use https://api.myip.la/en and https://ifconfig.io/country_code to get the country code
+    REGION=$(curl -s https://api.myip.la/en | awk '{print $2}')
+    if [ "$REGION" = "" ]; then
+        REGION=$(curl -s https://ifconfig.io/country_code)
+    fi
+    if [[ "$REGION" = "CN" ]]; then
+        CASA_DOWNLOAD_DOMAIN="https://casaos.oss-cn-shanghai.aliyuncs.com/"
+    fi
+}
+
 # 1 Check Arch
 Check_Arch() {
     case $UNAME_M in
@@ -195,11 +209,11 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-        "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7-1/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7-1.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-v0.3.7.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UI/releases/download/v0.3.7/linux-all-casaos-v0.3.7.tar.gz"
+        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
+        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7.tar.gz"
+        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7-1/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7-1.tar.gz"
+        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-v0.3.7.tar.gz"
+        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.3.7/linux-all-casaos-v0.3.7.tar.gz"
     )
 }
 
@@ -208,7 +222,7 @@ CASA_SERVICES=(
     "casaos-gateway.service"
     "casaos-user-service.service"
     "casaos-local-storage.service"
-    "casaos.service"  # must be the last one so update from UI can work
+    "casaos.service" # must be the last one so update from UI can work
 )
 
 # 2 Check Distribution
@@ -216,35 +230,41 @@ Check_Distribution() {
     sType=0
     notice=""
     case $LSB_DIST in
-    *debian*)
-        ;;
-    *ubuntu*)
-        ;;
-    *raspbian*)
-        ;;
+    *debian*) ;;
+
+    *ubuntu*) ;;
+
+    *raspbian*) ;;
+
     *openwrt*)
-        Show 1 "Aborted, OpenWrt cannot be installed using this script, please visit ${CASA_OPENWRT_DOCS}."
+        Show 1 "Aborted, OpenWrt cannot be installed using this script."
         exit 1
         ;;
     *alpine*)
         Show 1 "Aborted, Alpine installation is not yet supported."
         exit 1
         ;;
-    *trisquel*)
-        ;;
+    *trisquel*) ;;
+
     *)
         sType=1
         notice="We have not tested it on this system and it may fail to install."
         ;;
     esac
-    Show $sType "Your Linux Distribution is : $LSB_DIST $notice"
-    if [[ $sType == 1 ]]; then
-        if (whiptail --title "${TITLE}" --yesno --defaultno "Your Linux Distribution is : $LSB_DIST $notice. Continue installation?" 10 60); then
-            Show 0 "Distribution check has been ignored."
-        else
-            Show 1 "Already exited the installation."
-            exit 1
-        fi
+    Show ${sType} "Your Linux Distribution is : ${LSB_DIST} ${notice}"
+    if [[ ${sType} == 0 ]]; then
+        select yn in "Yes" "No"; do
+            case $yn in
+            [yY][eE][sS] | [yY])
+                Show 0 "Distribution check has been ignored."
+                break
+                ;;
+            [nN][oO] | [nN])
+                Show 1 "Already exited the installation."
+                exit 1
+                ;;
+            esac
+        done
     fi
 }
 
@@ -270,12 +290,19 @@ Check_Memory() {
 # 5 Check Disk
 Check_Disk() {
     if [[ "${FREE_DISK_GB}" -lt "${MINIMUM_DISK_SIZE_GB}" ]]; then
-        if (whiptail --title "${TITLE}" --yesno --defaultno "Recommended free disk space is greater than ${MINIMUM_DISK_SIZE_GB}GB, Current free disk space is ${FREE_DISK_GB}GB.Continue installation?" 10 60); then
-            Show 0 "Disk capacity check has been ignored."
-        else
-            Show 1 "Already exited the installation."
-            exit 1
-        fi
+        echo -e "${aCOLOUR[4]}Recommended free disk space is greater than ${MINIMUM_DISK_SIZE_GB}GB, Current free disk space is ${aCOLOUR[3]}${FREE_DISK_GB}GB${COLOUR_RESET}${aCOLOUR[4]}.\nContinue installation?${COLOUR_RESET}"
+        select yn in "Yes" "No"; do
+            case $yn in
+            [yY][eE][sS] | [yY])
+                Show 0 "Disk capacity check has been ignored."
+                break
+                ;;
+            [nN][oO] | [nN])
+                Show 1 "Already exited the installation."
+                exit 1
+                ;;
+            esac
+        done
     else
         Show 0 "Disk capacity check passed."
     fi
@@ -539,7 +566,7 @@ DownloadAndInstallCasaOS() {
     }
 
     ${sudo_cmd} chmod +x $CASA_UNINSTALL_PATH
-    
+
     for SERVICE in "${CASA_SERVICES[@]}"; do
         Show 2 "Starting ${SERVICE}..."
         GreyStart
@@ -631,6 +658,9 @@ while getopts ":p:h" arg; do
     esac
 done
 
+# Step 0 : Get Download Url Domain
+Get_Download_Url_Domain
+
 # Step 1：Check ARCH
 Check_Arch
 
@@ -661,6 +691,5 @@ DownloadAndInstallCasaOS
 # Step 9: Check Service Status
 Check_Service_status
 
-# Step 10: Show Welcome Banner
-#Clear_Term
+# Step 10: Clear Term and Show Welcome Banner
 Welcome_Banner
