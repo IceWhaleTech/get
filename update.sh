@@ -1,17 +1,17 @@
 #!/usr/bin/bash
 #
-#           CasaOS Installer Script
+#           CasaOS Update Script
 #
 #   GitHub: https://github.com/IceWhaleTech/CasaOS
 #   Issues: https://github.com/IceWhaleTech/CasaOS/issues
 #   Requires: bash, mv, rm, tr, grep, sed, curl/wget, tar, smartmontools, parted, ntfs-3g, net-tools
-#
-#   This script installs CasaOS to your system.
+# 
+#   This script update your CasaOS.
 #   Usage:
 #
-#   	$ curl -fsSL https://get.casaos.io | sudo bash
+#   	$ wget -qO- https://get.casaos.io/update | bash
 #   	  or
-#   	$ wget -qO- https://get.casaos.io | sudo bash
+#   	$ curl -fsSL https://get.casaos.io/update | bash
 #
 #   In automated environments, you may want to run as root.
 #   If using curl, we recommend using the -fsSL flags.
@@ -44,22 +44,9 @@ set -e
 # shellcheck source=/dev/null
 source /etc/os-release
 
-readonly TITLE="CasaOS Updater"
-
 # SYSTEM REQUIREMENTS
-readonly MINIMUM_DISK_SIZE_GB="5"
-readonly MINIMUM_MEMORY="400"
-readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'whiptail' 'udevil' 'samba' 'cifs-utils')
-readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'whiptail' 'udevil' 'samba' 'mount.cifs')
-
-# SYSTEM INFO
-PHYSICAL_MEMORY=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
-readonly PHYSICAL_MEMORY
-
-FREE_DISK_BYTES=$(LC_ALL=C df -P / | tail -n 1 | awk '{print $4}')
-readonly FREE_DISK_BYTES
-
-readonly FREE_DISK_GB=$((FREE_DISK_BYTES / 1024 / 1024))
+readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'udevil' 'samba' 'cifs-utils')
+readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'udevil' 'samba' 'mount.cifs')
 
 LSB_DIST=$( ( [ -n "${ID_LIKE}" ] && echo "${ID_LIKE}" ) || ( [ -n "${ID}" ] && echo "${ID}" ) )
 readonly LSB_DIST
@@ -67,10 +54,8 @@ readonly LSB_DIST
 UNAME_M="$(uname -m)"
 readonly UNAME_M
 
-UNAME_U="$(uname -s)"
-readonly UNAME_U
 
-readonly CASA_UNINSTALL_URL="https://raw.githubusercontent.com/IceWhaleTech/get/main/uninstall.sh"
+readonly CASA_UNINSTALL_URL="https://get.casaos.io/uninstall/v0.3.8"
 readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
 
 # REQUIREMENTS CONF PATH
@@ -91,14 +76,15 @@ readonly aCOLOUR=(
 # CASAOS VARIABLES
 TARGET_ARCH=""
 TMP_ROOT=/tmp/casaos-installer
+CASA_DOWNLOAD_DOMAIN="https://github.com/"
 
 
 # PACKAGE LIST OF CASAOS
 CASA_SERVICES=(
     "casaos-gateway.service"
-    "casaos-user-service.service"
-    "casaos-local-storage.service"
-    "casaos.service"  # must be the last one so update from UI can work
+"casaos-user-service.service"
+"casaos-local-storage.service"
+"casaos.service" # must be the last one so update from UI can work 
 )
 
 trap 'onCtrlC' INT
@@ -180,6 +166,19 @@ exist_file() {
 # FUNCTIONS                                                                   #
 ###############################################################################
 
+# 0 Get download url domain
+# To solve the problem that Chinese users cannot access github.
+Get_Download_Url_Domain() {
+    # Use https://api.myip.la/en and https://ifconfig.io/country_code to get the country code
+    REGION=$(${sudo_cmd} curl -s https://api.myip.la/en | awk '{print $2}')
+    if [ "${REGION}" = "" ]; then
+        REGION=$(${sudo_cmd} curl -s https://ifconfig.io/country_code)
+    fi
+    if [[ "${REGION}" = "CN" ]]; then
+        CASA_DOWNLOAD_DOMAIN="https://casaos.oss-cn-shanghai.aliyuncs.com/"
+    fi
+}
+
 # 1 Check Arch
 Check_Arch() {
     case $UNAME_M in
@@ -199,11 +198,11 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-        "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7-2/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7-2.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS/releases/download/v0.3.7-1/linux-${TARGET_ARCH}-casaos-v0.3.7-1.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UI/releases/download/v0.3.7/linux-all-casaos-v0.3.7.tar.gz"
+        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.8/linux-${TARGET_ARCH}-casaos-gateway-v0.3.8.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.8/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.8.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.3.8/linux-${TARGET_ARCH}-casaos-v0.3.8.tar.gz" 
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.3.8/linux-all-casaos-v0.3.8.tar.gz" 
     )
 }
 
@@ -233,47 +232,20 @@ Check_Distribution() {
         notice="We have not tested it on this system and it may fail to install."
         ;;
     esac
-    Show $sType "Your Linux Distribution is : $LSB_DIST $notice"
-    if [[ $sType == 1 ]]; then
-        if (whiptail --title "${TITLE}" --yesno --defaultno "Your Linux Distribution is : $LSB_DIST $notice. Continue installation?" 10 60); then
-            Show 0 "Distribution check has been ignored."
-        else
-            Show 1 "Already exited the installation."
-            exit 1
-        fi
-    fi
-}
-
-# 3 Check OS
-Check_OS() {
-    if [[ $UNAME_U == *Linux* ]]; then
-        Show 0 "Your System is : $UNAME_U"
-    else
-        Show 1 "This script is only for Linux."
-        exit 1
-    fi
-}
-
-# 4 Check Memory
-Check_Memory() {
-    if [[ "${PHYSICAL_MEMORY}" -lt "${MINIMUM_MEMORY}" ]]; then
-        Show 1 "requires atleast 1GB physical memory."
-        exit 1
-    fi
-    Show 0 "Memory capacity check passed."
-}
-
-# 5 Check Disk
-Check_Disk() {
-    if [[ "${FREE_DISK_GB}" -lt "${MINIMUM_DISK_SIZE_GB}" ]]; then
-        if (whiptail --title "${TITLE}" --yesno --defaultno "Recommended free disk space is greater than \e[33m${MINIMUM_DISK_SIZE_GB}GB\e[0m, Current free disk space is \e[33m${FREE_DISK_GB}GB.Continue installation?" 10 60); then
-            Show 0 "Disk capacity check has been ignored."
-        else
-            Show 1 "Already exited the installation."
-            exit 1
-        fi
-    else
-        Show 0 "Disk capacity check passed."
+    Show ${sType} "Your Linux Distribution is : ${LSB_DIST} ${notice}"
+    if [[ ${sType} == 0 ]]; then
+        select yn in "Yes" "No"; do
+            case $yn in
+            [yY][eE][sS] | [yY])
+                Show 0 "Distribution check has been ignored."
+                break
+                ;;
+            [nN][oO] | [nN])
+                Show 1 "Already exited the installation."
+                exit 1
+                ;;
+            esac
+        done
     fi
 }
 
@@ -391,7 +363,7 @@ DownloadAndInstallCasaOS() {
     if [ -z "${BUILD_DIR}" ]; then
 
         ${sudo_cmd} mkdir -p ${TMP_ROOT} || Show 1 "Failed to create temporary directory"
-        TMP_DIR=$(mktemp -d -p ${TMP_ROOT} || Show 1 "Failed to create temporary directory")
+        TMP_DIR=$(${sudo_cmd} mktemp -d -p ${TMP_ROOT} || Show 1 "Failed to create temporary directory")
 
         pushd "${TMP_DIR}"
 
@@ -501,25 +473,19 @@ while getopts ":p:h" arg; do
     esac
 done
 
-# Step 1：Check ARCH
+# Step 0: Get Download Url Domain
+Get_Download_Url_Domain
+
+# Step 1: Check ARCH
 Check_Arch
 
-# Step 2: Check OS
-Check_OS
-
-# Step 3: Check Distribution
-Check_Distribution
-
-# Step 4: Check System 
-Check_Memory
-
-# Step 5: Install Depends
+# Step 2: Install Depends
 Update_Package_Resource
 Install_Depends
 Check_Dependency_Installation
 
-# Step 7: Configuration Addon
+# Step 3: Configuration Addon
 Configuration_Addons
 
-# Step 8: Download And Install CasaOS
+# Step 4: Download And Install CasaOS
 DownloadAndInstallCasaOS
