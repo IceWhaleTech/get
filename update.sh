@@ -198,11 +198,14 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.8/linux-${TARGET_ARCH}-casaos-gateway-v0.3.8.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.8/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.8.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.3.8/linux-${TARGET_ARCH}-casaos-v0.3.8.tar.gz" 
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.3.8/linux-all-casaos-v0.3.8.tar.gz" 
+        "http://192.168.0.172:8000/download/linux-amd64-casaos-gateway-v0.3.8-snapshot.tar.gz"
+        "http://192.168.0.172:8000/download/linux-amd64-casaos-message-bus-v0.4.0-snapshot.tar.gz"
+        "http://192.168.0.172:8000/download/linux-amd64-casaos-user-service-v0.4.0-snapshot.tar.gz"
+        "http://192.168.0.172:8000/download/linux-amd64-casaos-local-storage-v0.3.9-snapshot.tar.gz"
+        "http://192.168.0.172:8000/download/linux-amd64-casaos-app-management-v0.4.0-snapshot.tar.gz"
+        "http://192.168.0.172:8000/download/linux-amd64-casaos-v0.3.9.tar.gz"
+        "http://192.168.0.172:8000/download/linux-amd64-casaosctl-v0.4.0-snapshot.tar.gz"
+        "https://github.com/IceWhaleTech/CasaOS-UI/releases/download/v0.3.7/linux-all-casaos-v0.3.7.tar.gz"
     )
 }
 

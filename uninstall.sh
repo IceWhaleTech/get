@@ -37,10 +37,12 @@ echo '
 ((EUID)) && sudo_cmd="sudo"
 
 readonly CASA_SERVICES=(
+    "casaos.service" 
     "casaos-gateway.service"
+    "casaos-message-bus.service"
     "casaos-user-service.service"
-    "casaos.service"
     "casaos-local-storage.service"
+    "casaos-app-management.service"
     "devmon@devmon.service"
 )
 
