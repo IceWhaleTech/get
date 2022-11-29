@@ -222,6 +222,8 @@ Check_Distribution() {
         ;;
     *raspbian*)
         ;;
+    *arch*) 
+        ;;
     *openwrt*)
         Show 1 "Aborted, OpenWrt cannot be installed using this script, please visit ${CASA_OPENWRT_DOCS}."
         exit 1
@@ -322,6 +324,12 @@ Update_Package_Resource() {
         ${sudo_cmd} zypper update
     elif [ -x "$(command -v yum)" ]; then
         ${sudo_cmd} yum update
+    elif [ -x "$(command -v yay)" ]; then
+        yay -Syyu
+    elif [ -x "$(command -v paru)" ]; then
+        paru -Syyu
+    elif [ -x "$(command -v pacman)" ]; then
+        ${sudo_cmd} pacman -Syyu
     fi
     ColorReset
 }
@@ -343,11 +351,16 @@ Install_Depends() {
             elif [ -x "$(command -v zypper)" ]; then
                 ${sudo_cmd} zypper install "$packagesNeeded"
             elif [ -x "$(command -v yum)" ]; then
-                ${sudo_cmd} yum install "$packagesNeeded"
+                ${sudo_cmd} yum install "$packagesNeeded"        
+            elif [ -x "$(command -v paru)" ]; then
+                paru -S "$packagesNeeded"
+            elif [ -x "$(command -v yay)" ]; then
+                yay -S "$packagesNeeded"                
             elif [ -x "$(command -v pacman)" ]; then
                 ${sudo_cmd} pacman -S "$packagesNeeded"
-            elif [ -x "$(command -v paru)" ]; then
-                ${sudo_cmd} paru -S "$packagesNeeded"
+                # paru or yay is need to install udevil
+                ${sudo_cmd} pacman -S paru
+                paru -S udevil
             else
                 Show 1 "Package manager not found. You must manually install: \e[33m$packagesNeeded \e[0m"
             fi
