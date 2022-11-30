@@ -195,7 +195,7 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-        "https://github.com/zhanghengxin/CasaOS-UI/releases/download/v0.3.8-Developing/linux-all-casaos-v0.3.8.tar.gz"
+        "https://github.com/zhanghengxin/CasaOS-UI/releases/download/v0.4.0-Developing/linux-all-casaos-v0.4.0.tar.gz"
         "http://192.168.2.18:8000/download/linux-all-casaos-v0.3.8.tar.gz"
         "http://192.168.2.18:8000/download/linux-amd64-casaos-v0.3.9.tar.gz"
         "http://192.168.2.18:8000/download/linux-amd64-casaos-cli-v0.4.0-snapshot.tar.gz"
