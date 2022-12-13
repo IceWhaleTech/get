@@ -9,9 +9,9 @@
 #   This script installs CasaOS to your system.
 #   Usage:
 #
-#   	$ curl -fsSL https://get.casaos.io | sudo bash
+#   	$ wget -qO- https://get.casaos.io/ | bash
 #   	  or
-#   	$ wget -qO- https://get.casaos.io | sudo bash
+#   	$ curl -fsSL https://get.casaos.io/ | bash
 #
 #   In automated environments, you may want to run as root.
 #   If using curl, we recommend using the -fsSL flags.
@@ -34,6 +34,8 @@ echo '
    --- Made by IceWhale with YOU ---
 '
 export PATH=/usr/sbin:$PATH
+export DEBIAN_FRONTEND=noninteractive
+
 set -e
 
 ###############################################################################
@@ -45,14 +47,12 @@ set -e
 # shellcheck source=/dev/null
 source /etc/os-release
 
-readonly TITLE="CasaOS Installer"
-
 # SYSTEM REQUIREMENTS
 readonly MINIMUM_DISK_SIZE_GB="5"
 readonly MINIMUM_MEMORY="400"
 readonly MINIMUM_DOCER_VERSION="20"
-readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'whiptail' 'udevil' 'samba' 'cifs-utils')
-readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'whiptail' 'udevil' 'samba' 'mount.cifs')
+readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'udevil' 'samba' 'cifs-utils')
+readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'udevil' 'samba' 'mount.cifs')
 
 # SYSTEM INFO
 PHYSICAL_MEMORY=$(LC_ALL=C free -m | awk '/Mem:/ { print $2 }')
@@ -63,7 +63,7 @@ readonly FREE_DISK_BYTES
 
 readonly FREE_DISK_GB=$((FREE_DISK_BYTES / 1024 / 1024))
 
-LSB_DIST=$( ( [ -n "${ID_LIKE}" ] && echo "${ID_LIKE}" ) || ( [ -n "${ID}" ] && echo "${ID}" ) )
+LSB_DIST=$( ([ -n "${ID_LIKE}" ] && echo "${ID_LIKE}") || ([ -n "${ID}" ] && echo "${ID}"))
 readonly LSB_DIST
 
 UNAME_M="$(uname -m)"
@@ -73,7 +73,7 @@ UNAME_U="$(uname -s)"
 readonly UNAME_U
 
 readonly CASA_CONF_PATH=/etc/casaos/gateway.ini
-readonly CASA_UNINSTALL_URL="https://raw.githubusercontent.com/IceWhaleTech/get/main/uninstall.sh"
+readonly CASA_UNINSTALL_URL="https://get.casaos.io/uninstall/v0.4.0"
 readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
 
 # REQUIREMENTS CONF PATH
@@ -97,6 +97,8 @@ readonly GREEN_SEPARATOR="${aCOLOUR[0]}:$COLOUR_RESET"
 # CASAOS VARIABLES
 TARGET_ARCH=""
 TMP_ROOT=/tmp/casaos-installer
+REGION="UNKNOWN"
+CASA_DOWNLOAD_DOMAIN="https://github.com/"
 
 trap 'onCtrlC' INT
 onCtrlC() {
@@ -176,6 +178,22 @@ exist_file() {
 # FUNCTIONS                                                                   #
 ###############################################################################
 
+
+
+# 0 Get download url domain
+# To solve the problem that Chinese users cannot access github.
+Get_Download_Url_Domain() {
+    # Use https://api.myip.la/en and https://ifconfig.io/country_code to get the country code
+    #REGION=$(${sudo_cmd} curl --connect-timeout 2 -s https://api.myip.la/en | awk '{print $2}')
+    REGION=$(${sudo_cmd} curl --connect-timeout 2 -s https://ifconfig.io/country_code)
+    #if [ "${REGION}" = "" ]; then
+    #    REGION=$(${sudo_cmd} curl --connect-timeout 2 -s https://ifconfig.io/country_code)
+    #fi
+    if [[ "${REGION}" = "CN" ]]; then
+        CASA_DOWNLOAD_DOMAIN="https://casaos.oss-cn-shanghai.aliyuncs.com/"
+    fi
+}
+
 # 1 Check Arch
 Check_Arch() {
     case $UNAME_M in
@@ -195,20 +213,25 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-        "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7-2/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7-2.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS/releases/download/v0.3.7-1/linux-${TARGET_ARCH}-casaos-v0.3.7-1.tar.gz"
-        "https://github.com/IceWhaleTech/CasaOS-UI/releases/download/v0.3.7/linux-all-casaos-v0.3.7.tar.gz"
+        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-gateway-v0.4.0.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-MessageBus/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-message-bus-v0.4.0.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-user-service-v0.4.0.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-local-storage-v0.4.0.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-app-management-v0.4.0.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-v0.4.0.tar.gz" 
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-CLI/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-cli-v0.4.0.tar.gz" 
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.4.0/linux-all-casaos-v0.4.0.tar.gz" 
     )
 }
 
 # PACKAGE LIST OF CASAOS (make sure the services are in the right order)
 CASA_SERVICES=(
     "casaos-gateway.service"
-    "casaos-user-service.service"
-    "casaos-local-storage.service"
-    "casaos.service"  # must be the last one so update from UI can work
+"casaos-message-bus.service"
+"casaos-user-service.service"
+"casaos-local-storage.service"
+"casaos-app-management.service"
+"casaos.service"  # must be the last one so update from UI can work 
 )
 
 # 2 Check Distribution
@@ -216,37 +239,42 @@ Check_Distribution() {
     sType=0
     notice=""
     case $LSB_DIST in
-    *debian*)
-        ;;
-    *ubuntu*)
-        ;;
-    *raspbian*)
-        ;;
-    *arch*) 
-        ;;
+    *debian*) ;;
+
+    *ubuntu*) ;;
+
+    *raspbian*) ;;
+
     *openwrt*)
-        Show 1 "Aborted, OpenWrt cannot be installed using this script, please visit ${CASA_OPENWRT_DOCS}."
+        Show 1 "Aborted, OpenWrt cannot be installed using this script."
         exit 1
         ;;
     *alpine*)
         Show 1 "Aborted, Alpine installation is not yet supported."
         exit 1
         ;;
-    *trisquel*)
-        ;;
+    *trisquel*) ;;
+
     *)
         sType=1
         notice="We have not tested it on this system and it may fail to install."
         ;;
     esac
-    Show $sType "Your Linux Distribution is : $LSB_DIST $notice"
-    if [[ $sType == 1 ]]; then
-        if (whiptail --title "${TITLE}" --yesno --defaultno "Your Linux Distribution is : $LSB_DIST $notice. Continue installation?" 10 60); then
-            Show 0 "Distribution check has been ignored."
-        else
-            Show 1 "Already exited the installation."
-            exit 1
-        fi
+    Show ${sType} "Your Linux Distribution is : ${LSB_DIST} ${notice}"
+
+    if [[ ${sType} == 1 ]]; then
+        select yn in "Yes" "No"; do
+            case $yn in
+            [yY][eE][sS] | [yY])
+                Show 0 "Distribution check has been ignored."
+                break
+                ;;
+            [nN][oO] | [nN])
+                Show 1 "Already exited the installation."
+                exit 1
+                ;;
+            esac
+        done < /dev/tty # < /dev/tty is used to read the input from the terminal
     fi
 }
 
@@ -272,12 +300,19 @@ Check_Memory() {
 # 5 Check Disk
 Check_Disk() {
     if [[ "${FREE_DISK_GB}" -lt "${MINIMUM_DISK_SIZE_GB}" ]]; then
-        if (whiptail --title "${TITLE}" --yesno --defaultno "Recommended free disk space is greater than ${MINIMUM_DISK_SIZE_GB}GB, Current free disk space is ${FREE_DISK_GB}GB.Continue installation?" 10 60); then
-            Show 0 "Disk capacity check has been ignored."
-        else
-            Show 1 "Already exited the installation."
-            exit 1
-        fi
+        echo -e "${aCOLOUR[4]}Recommended free disk space is greater than ${MINIMUM_DISK_SIZE_GB}GB, Current free disk space is ${aCOLOUR[3]}${FREE_DISK_GB}GB${COLOUR_RESET}${aCOLOUR[4]}.\nContinue installation?${COLOUR_RESET}"
+        select yn in "Yes" "No"; do
+            case $yn in
+            [yY][eE][sS] | [yY])
+                Show 0 "Disk capacity check has been ignored."
+                break
+                ;;
+            [nN][oO] | [nN])
+                Show 1 "Already exited the installation."
+                exit 1
+                ;;
+            esac
+        done < /dev/tty  # < /dev/tty is used to read the input from the terminal
     else
         Show 0 "Disk capacity check passed."
     fi
@@ -324,12 +359,6 @@ Update_Package_Resource() {
         ${sudo_cmd} zypper update
     elif [ -x "$(command -v yum)" ]; then
         ${sudo_cmd} yum update
-    elif [ -x "$(command -v yay)" ]; then
-        yay -Syyu
-    elif [ -x "$(command -v paru)" ]; then
-        paru -Syyu
-    elif [ -x "$(command -v pacman)" ]; then
-        ${sudo_cmd} pacman -Syyu
     fi
     ColorReset
 }
@@ -351,16 +380,11 @@ Install_Depends() {
             elif [ -x "$(command -v zypper)" ]; then
                 ${sudo_cmd} zypper install "$packagesNeeded"
             elif [ -x "$(command -v yum)" ]; then
-                ${sudo_cmd} yum install "$packagesNeeded"        
-            elif [ -x "$(command -v paru)" ]; then
-                paru -S "$packagesNeeded"
-            elif [ -x "$(command -v yay)" ]; then
-                yay -S "$packagesNeeded"                
+                ${sudo_cmd} yum install "$packagesNeeded"
             elif [ -x "$(command -v pacman)" ]; then
                 ${sudo_cmd} pacman -S "$packagesNeeded"
-                # paru or yay is need to install udevil
-                ${sudo_cmd} pacman -S paru
-                paru -S udevil
+            elif [ -x "$(command -v paru)" ]; then
+                ${sudo_cmd} paru -S "$packagesNeeded"
             else
                 Show 1 "Package manager not found. You must manually install: \e[33m$packagesNeeded \e[0m"
             fi
@@ -433,7 +457,11 @@ Check_Docker_Install_Final() {
 Install_Docker() {
     Show 2 "Install the necessary dependencies: \e[33mDocker \e[0m"
     GreyStart
-    curl -fsSL https://get.docker.com | bash
+    if [[ "${REGION}" = "CN" ]]; then
+        ${sudo_cmd} curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
+    else
+        ${sudo_cmd} curl -fsSL https://get.docker.com | bash
+    fi
     ColorReset
     if [[ $? -ne 0 ]]; then
         Show 1 "Installation failed, please try again."
@@ -480,25 +508,25 @@ DownloadAndInstallCasaOS() {
     if [ -z "${BUILD_DIR}" ]; then
         ${sudo_cmd} rm -rf ${TMP_ROOT}
         mkdir -p ${TMP_ROOT} || Show 1 "Failed to create temporary directory"
-        TMP_DIR=$(mktemp -d -p ${TMP_ROOT} || Show 1 "Failed to create temporary directory")
+        TMP_DIR=$(${sudo_cmd} mktemp -d -p ${TMP_ROOT} || Show 1 "Failed to create temporary directory")
 
         pushd "${TMP_DIR}"
 
         for PACKAGE in "${CASA_PACKAGES[@]}"; do
             Show 2 "Downloading ${PACKAGE}..."
             GreyStart
-            curl -sLO "${PACKAGE}" || Show 1 "Failed to download package"
+            ${sudo_cmd} curl -sLO "${PACKAGE}" || Show 1 "Failed to download package"
             ColorReset
         done
 
         for PACKAGE_FILE in linux-*-casaos-*.tar.gz; do
             Show 2 "Extracting ${PACKAGE_FILE}..."
             GreyStart
-            tar zxf "${PACKAGE_FILE}" || Show 1 "Failed to extract package"
+            ${sudo_cmd} tar zxf "${PACKAGE_FILE}" || Show 1 "Failed to extract package"
             ColorReset
         done
 
-        BUILD_DIR=$(realpath -e "${TMP_DIR}"/build || Show 1 "Failed to find build directory")
+        BUILD_DIR=$(${sudo_cmd} realpath -e "${TMP_DIR}"/build || Show 1 "Failed to find build directory")
 
         popd
     fi
@@ -552,7 +580,7 @@ DownloadAndInstallCasaOS() {
     }
 
     ${sudo_cmd} chmod +x $CASA_UNINSTALL_PATH
-    
+
     for SERVICE in "${CASA_SERVICES[@]}"; do
         Show 2 "Starting ${SERVICE}..."
         GreyStart
@@ -644,7 +672,9 @@ while getopts ":p:h" arg; do
     esac
 done
 
-# Step 1：Check ARCH
+# Step 0 : Get Download Url Domain
+Get_Download_Url_Domain
+# Step 1: Check ARCH
 Check_Arch
 
 # Step 2: Check OS
@@ -662,7 +692,7 @@ Update_Package_Resource
 Install_Depends
 Check_Dependency_Installation
 
-# Step 6： Check And Install Docker
+# Step 6: Check And Install Docker
 Check_Docker_Install
 
 # Step 7: Configuration Addon
@@ -674,6 +704,5 @@ DownloadAndInstallCasaOS
 # Step 9: Check Service Status
 Check_Service_status
 
-# Step 10: Show Welcome Banner
-#Clear_Term
+# Step 10: Clear Term and Show Welcome Banner
 Welcome_Banner
