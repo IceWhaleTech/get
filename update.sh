@@ -1,17 +1,17 @@
 #!/usr/bin/bash
 #
-#           CasaOS Installer Script
+#           CasaOS Update Script
 #
 #   GitHub: https://github.com/IceWhaleTech/CasaOS
 #   Issues: https://github.com/IceWhaleTech/CasaOS/issues
 #   Requires: bash, mv, rm, tr, grep, sed, curl/wget, tar, smartmontools, parted, ntfs-3g, net-tools
-#
-#   This script installs CasaOS to your system.
+# 
+#   This script update your CasaOS.
 #   Usage:
 #
-#   	$ curl -fsSL https://get.casaos.io | sudo bash
+#   	$ wget -qO- https://get.casaos.io/update | bash
 #   	  or
-#   	$ wget -qO- https://get.casaos.io | sudo bash
+#   	$ curl -fsSL https://get.casaos.io/update | bash
 #
 #   In automated environments, you may want to run as root.
 #   If using curl, we recommend using the -fsSL flags.
@@ -55,7 +55,7 @@ UNAME_M="$(uname -m)"
 readonly UNAME_M
 
 
-readonly CASA_UNINSTALL_URL="https://raw.githubusercontent.com/IceWhaleTech/get/main/uninstall.sh"
+readonly CASA_UNINSTALL_URL="https://get.casaos.io/uninstall/v0.4.0"
 readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
 
 # REQUIREMENTS CONF PATH
@@ -82,9 +82,11 @@ CASA_DOWNLOAD_DOMAIN="https://github.com/"
 # PACKAGE LIST OF CASAOS
 CASA_SERVICES=(
     "casaos-gateway.service"
-    "casaos-user-service.service"
-    "casaos-local-storage.service"
-    "casaos.service"  # must be the last one so update from UI can work
+"casaos-message-bus.service"
+"casaos-user-service.service"
+"casaos-local-storage.service"
+"casaos-app-management.service"
+"casaos.service"  # must be the last one so update from UI can work 
 )
 
 trap 'onCtrlC' INT
@@ -170,11 +172,12 @@ exist_file() {
 # To solve the problem that Chinese users cannot access github.
 Get_Download_Url_Domain() {
     # Use https://api.myip.la/en and https://ifconfig.io/country_code to get the country code
-    REGION=$(curl -s https://api.myip.la/en | awk '{print $2}')
-    if [ "$REGION" = "" ]; then
-        REGION=$(curl -s https://ifconfig.io/country_code)
-    fi
-    if [[ "$REGION" = "CN" ]]; then
+    #REGION=$(${sudo_cmd} curl --connect-timeout 2 -s https://api.myip.la/en | awk '{print $2}')
+    REGION=$(${sudo_cmd} curl --connect-timeout 2 -s ipconfig.io/country)
+    #if [ "${REGION}" = "" ]; then
+    #    REGION=$(${sudo_cmd} curl --connect-timeout 2 -s https://ifconfig.io/country_code)
+    #fi
+    if [[ "${REGION}" = "China" ]]; then
         CASA_DOWNLOAD_DOMAIN="https://casaos.oss-cn-shanghai.aliyuncs.com/"
     fi
 }
@@ -198,11 +201,14 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.3.6/linux-${TARGET_ARCH}-casaos-gateway-v0.3.6.tar.gz"
-        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-user-service-v0.3.7.tar.gz"
-        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.3.7-1/linux-${TARGET_ARCH}-casaos-local-storage-v0.3.7-1.tar.gz"
-        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.3.7/linux-${TARGET_ARCH}-casaos-v0.3.7.tar.gz"
-        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.3.7/linux-all-casaos-v0.3.7.tar.gz"
+        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-gateway-v0.4.0.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-MessageBus/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-message-bus-v0.4.0.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-user-service-v0.4.0.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-local-storage-v0.4.0.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-app-management-v0.4.0.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-v0.4.0.tar.gz" 
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-CLI/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-cli-v0.4.0.tar.gz" 
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.4.0/linux-all-casaos-v0.4.0.tar.gz" 
     )
 }
 
@@ -363,7 +369,7 @@ DownloadAndInstallCasaOS() {
     if [ -z "${BUILD_DIR}" ]; then
 
         ${sudo_cmd} mkdir -p ${TMP_ROOT} || Show 1 "Failed to create temporary directory"
-        TMP_DIR=$(mktemp -d -p ${TMP_ROOT} || Show 1 "Failed to create temporary directory")
+        TMP_DIR=$(${sudo_cmd} mktemp -d -p ${TMP_ROOT} || Show 1 "Failed to create temporary directory")
 
         pushd "${TMP_DIR}"
 
@@ -473,10 +479,10 @@ while getopts ":p:h" arg; do
     esac
 done
 
-# Step 0 : Get Download Url Domain
+# Step 0: Get Download Url Domain
 Get_Download_Url_Domain
 
-# Step 1：Check ARCH
+# Step 1: Check ARCH
 Check_Arch
 
 # Step 2: Install Depends
