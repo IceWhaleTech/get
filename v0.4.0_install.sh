@@ -183,6 +183,7 @@ exist_file() {
 # 0 Get download url domain
 # To solve the problem that Chinese users cannot access github.
 Get_Download_Url_Domain() {
+    Show 0 "Start to check region"
     # Use https://api.myip.la/en and https://ifconfig.io/country_code to get the country code
     #REGION=$(${sudo_cmd} curl --connect-timeout 2 -s https://api.myip.la/en | awk '{print $2}')
     REGION=$(${sudo_cmd} curl --connect-timeout 2 -s ipconfig.io/country)
@@ -192,6 +193,7 @@ Get_Download_Url_Domain() {
     if [[ "${REGION}" = "China" ]]; then
         CASA_DOWNLOAD_DOMAIN="https://casaos.oss-cn-shanghai.aliyuncs.com/"
     fi
+    Show 0 "Check region OK"
 }
 
 
