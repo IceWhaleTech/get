@@ -186,7 +186,7 @@ Get_Download_Url_Domain() {
     Show 0 "Start to check region"
     # Use https://api.myip.la/en and https://ifconfig.io/country_code to get the country code
     #REGION=$(${sudo_cmd} curl --connect-timeout 2 -s https://api.myip.la/en | awk '{print $2}')
-    REGION=$(${sudo_cmd} curl --connect-timeout 2 -s ipconfig.io/country)
+    REGION=$(${sudo_cmd} curl --connect-timeout 0.1 -s ipconfig.io/country)
     #if [ "${REGION}" = "" ]; then
     #    REGION=$(${sudo_cmd} curl --connect-timeout 2 -s https://ifconfig.io/country_code)
     #fi
