@@ -185,14 +185,15 @@ exist_file() {
 Get_Download_Url_Domain() {
     # Use https://api.myip.la/en and https://ifconfig.io/country_code to get the country code
     #REGION=$(${sudo_cmd} curl --connect-timeout 2 -s https://api.myip.la/en | awk '{print $2}')
-    REGION=$(${sudo_cmd} curl --connect-timeout 2 -s https://ifconfig.io/country_code)
+    REGION=$(${sudo_cmd} curl --connect-timeout 2 -s ipconfig.io/country)
     #if [ "${REGION}" = "" ]; then
     #    REGION=$(${sudo_cmd} curl --connect-timeout 2 -s https://ifconfig.io/country_code)
     #fi
-    if [[ "${REGION}" = "CN" ]]; then
+    if [[ "${REGION}" = "China" ]]; then
         CASA_DOWNLOAD_DOMAIN="https://casaos.oss-cn-shanghai.aliyuncs.com/"
     fi
 }
+
 
 # 1 Check Arch
 Check_Arch() {
