@@ -45,8 +45,8 @@ set -e
 source /etc/os-release
 
 # SYSTEM REQUIREMENTS
-readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'udevil' 'samba' 'cifs-utils')
-readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'udevil' 'samba' 'mount.cifs')
+readonly CASA_DEPANDS_PACKAGE=('wget' 'curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'udevil' 'samba' 'cifs-utils' 'mergerfs')
+readonly CASA_DEPANDS_COMMAND=('wget' 'curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'udevil' 'samba' 'mount.cifs' 'mount.mergerfs')
 
 LSB_DIST=$( ( [ -n "${ID_LIKE}" ] && echo "${ID_LIKE}" ) || ( [ -n "${ID}" ] && echo "${ID}" ) )
 readonly LSB_DIST
@@ -55,7 +55,7 @@ UNAME_M="$(uname -m)"
 readonly UNAME_M
 
 
-readonly CASA_UNINSTALL_URL="https://get.casaos.io/uninstall/v0.4.0"
+readonly CASA_UNINSTALL_URL="https://get.casaos.io/uninstall/v0.4.1"
 readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
 
 # REQUIREMENTS CONF PATH
@@ -180,6 +180,7 @@ Get_Download_Url_Domain() {
         CASA_DOWNLOAD_DOMAIN="https://casaos.oss-cn-shanghai.aliyuncs.com/"
     fi
 }
+
 # 1 Check Arch
 Check_Arch() {
     case $UNAME_M in
@@ -199,14 +200,14 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-gateway-v0.4.0.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-MessageBus/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-message-bus-v0.4.0.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-user-service-v0.4.0.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-local-storage-v0.4.0.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-app-management-v0.4.0.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-v0.4.0.tar.gz" 
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-CLI/releases/download/v0.4.0/linux-${TARGET_ARCH}-casaos-cli-v0.4.0.tar.gz" 
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.4.0/linux-all-casaos-v0.4.0.tar.gz" 
+        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-gateway-v0.4.1.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-MessageBus/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-message-bus-v0.4.1.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-user-service-v0.4.1.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-local-storage-v0.4.1.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-app-management-v0.4.1.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-v0.4.1.tar.gz" 
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-CLI/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-cli-v0.4.1.tar.gz" 
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.4.1/linux-all-casaos-v0.4.1.tar.gz" 
     )
 }
 
@@ -374,7 +375,7 @@ DownloadAndInstallCasaOS() {
         for PACKAGE in "${CASA_PACKAGES[@]}"; do
             Show 2 "Downloading ${PACKAGE}..."
           
-            ${sudo_cmd} curl -sLO "${PACKAGE}" || Show 1 "Failed to download package"
+            ${sudo_cmd} wget -t 3 -q --show-progress -c  "${PACKAGE}" || Show 1 "Failed to download package"
             
         done
 
@@ -412,7 +413,7 @@ DownloadAndInstallCasaOS() {
     ${sudo_cmd} touch "${MANIFEST_FILE}" || Show 1 "Failed to create manifest file"
 
     
-    find "${SYSROOT_DIR}" -type f | ${sudo_cmd} cut -c ${#SYSROOT_DIR}- | ${sudo_cmd} cut -c 2- | ${sudo_cmd} tee "${MANIFEST_FILE}" || Show 1 "Failed to create manifest file"
+    find "${SYSROOT_DIR}" -type f | ${sudo_cmd} cut -c ${#SYSROOT_DIR}- | ${sudo_cmd} cut -c 2- | ${sudo_cmd} tee "${MANIFEST_FILE}" >/dev/null || Show 1 "Failed to create manifest file"
 
     ${sudo_cmd} cp -rf "${SYSROOT_DIR}"/* / >> /dev/null || Show 1 "Failed to install CasaOS"
 
@@ -422,6 +423,13 @@ DownloadAndInstallCasaOS() {
         Show 2 "Running ${SETUP_SCRIPT}..."
         ${sudo_cmd} bash "${SETUP_SCRIPT}" || Show 1 "Failed to run setup script"
     done
+    
+    # Reset Permissions
+    UI_EVENTS_REG_SCRIPT=/etc/casaos/start.d/register-ui-events.sh
+    if [[ -f ${UI_EVENTS_REG_SCRIPT} ]]; then
+        ${sudo_cmd} chmod +x $UI_EVENTS_REG_SCRIPT
+    fi
+    
     
     #Download Uninstall Script
     if [[ -f ${PREFIX}/tmp/casaos-uninstall ]]; then
@@ -438,7 +446,7 @@ DownloadAndInstallCasaOS() {
     ## Special markings
 
     Show 0 "CasaOS upgrade successfully"
-   for SERVICE in "${CASA_SERVICES[@]}"; do
+    for SERVICE in "${CASA_SERVICES[@]}"; do
         Show 2 "restart ${SERVICE}..."
 
         ${sudo_cmd} systemctl restart "${SERVICE}" || Show 3 "Service ${SERVICE} does not exist."
@@ -484,7 +492,7 @@ Get_Download_Url_Domain
 Check_Arch
 
 # Step 2: Install Depends
-# Update_Package_Resource
+Update_Package_Resource
 Install_Depends
 Check_Dependency_Installation
 
