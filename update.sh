@@ -1,7 +1,6 @@
 #!/usr/bin/bash
 #
-#           CasaOS Update Script
-#
+#           CasaOS Update Script v0.4.2#
 #   GitHub: https://github.com/IceWhaleTech/CasaOS
 #   Issues: https://github.com/IceWhaleTech/CasaOS/issues
 #   Requires: bash, mv, rm, tr, grep, sed, curl/wget, tar, smartmontools, parted, ntfs-3g, net-tools
@@ -45,8 +44,8 @@ set -e
 source /etc/os-release
 
 # SYSTEM REQUIREMENTS
-readonly CASA_DEPANDS_PACKAGE=('wget' 'curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'udevil' 'samba' 'cifs-utils' 'mergerfs')
-readonly CASA_DEPANDS_COMMAND=('wget' 'curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'udevil' 'samba' 'mount.cifs' 'mount.mergerfs')
+readonly CASA_DEPANDS_PACKAGE=('wget' 'curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'udevil' 'samba' 'cifs-utils' 'mergerfs' 'unzip')
+readonly CASA_DEPANDS_COMMAND=('wget' 'curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'udevil' 'samba' 'mount.cifs' 'mount.mergerfs' 'unzip')
 
 LSB_DIST=$( ( [ -n "${ID_LIKE}" ] && echo "${ID_LIKE}" ) || ( [ -n "${ID}" ] && echo "${ID}" ) )
 readonly LSB_DIST
@@ -55,7 +54,7 @@ UNAME_M="$(uname -m)"
 readonly UNAME_M
 
 
-readonly CASA_UNINSTALL_URL="https://get.casaos.io/uninstall/v0.4.1"
+readonly CASA_UNINSTALL_URL="https://get.casaos.io/uninstall/v0.4.2"
 readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
 
 # REQUIREMENTS CONF PATH
@@ -86,6 +85,7 @@ CASA_SERVICES=(
 "casaos-user-service.service"
 "casaos-local-storage.service"
 "casaos-app-management.service"
+"rclone.service"
 "casaos.service"  # must be the last one so update from UI can work 
 )
 
@@ -200,14 +200,14 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-gateway-v0.4.1.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-MessageBus/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-message-bus-v0.4.1.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-user-service-v0.4.1.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-local-storage-v0.4.1.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-app-management-v0.4.1.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-v0.4.1.tar.gz" 
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-CLI/releases/download/v0.4.1/linux-${TARGET_ARCH}-casaos-cli-v0.4.1.tar.gz" 
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.4.1/linux-all-casaos-v0.4.1.tar.gz" 
+        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.4.2-alpha1/linux-${TARGET_ARCH}-casaos-gateway-v0.4.2-alpha1.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-MessageBus/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-message-bus-v0.4.2.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-user-service-v0.4.2.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-local-storage-v0.4.2.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-app-management-v0.4.2.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-v0.4.2.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-CLI/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-cli-v0.4.2.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.4.2/linux-all-casaos-v0.4.2.tar.gz" 
     )
 }
 
@@ -233,7 +233,7 @@ Check_Distribution() {
     *trisquel*)
         ;;
     *)
-        sType=1
+        sType=3
         notice="We have not tested it on this system and it may fail to install."
         ;;
     esac
@@ -325,6 +325,19 @@ Check_Dependency_Installation() {
     done
 }
 
+#Install Rclone
+Install_Rclone() {
+	Show 2 "Install the necessary dependencies: \e[33mRclone \e[0m"
+    GreyStart
+    ${sudo_cmd} curl https://rclone.org/install.sh | ${sudo_cmd} bash || echo ""
+    ColorReset
+    if [[ $? -ne 0 ]]; then
+        Show 1 "Installation failed, please try again."
+        exit 1
+    fi
+    ${sudo_cmd} systemctl enable rclone.service
+}
+
 
 #Configuration Addons
 Configuration_Addons() {
@@ -344,7 +357,7 @@ Configuration_Addons() {
         # Revert previous CasaOS udevil configuration
         #shellcheck disable=SC2016
         ${sudo_cmd} sed -i 's/allowed_media_dirs = \/DATA, \/DATA\/$USER/allowed_media_dirs = \/media, \/media\/$USER, \/run\/media\/$USER/g' "${PREFIX}${UDEVIL_CONF_PATH}"
-
+        ${sudo_cmd} sed -i '/exfat/s/, nonempty//g' "$PREFIX"${UDEVIL_CONF_PATH}
         # GreyStart
         # Add a devmon user
         USERNAME=devmon
@@ -442,6 +455,7 @@ DownloadAndInstallCasaOS() {
     }
 
     ${sudo_cmd} chmod +x $CASA_UNINSTALL_PATH
+    Install_Rclone
     
     ## Special markings
 
@@ -492,9 +506,10 @@ Get_Download_Url_Domain
 Check_Arch
 
 # Step 2: Install Depends
-Update_Package_Resource
+# Update_Package_Resource
 Install_Depends
 Check_Dependency_Installation
+
 
 # Step 3: Configuration Addon
 Configuration_Addons
