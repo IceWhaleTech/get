@@ -511,7 +511,7 @@ Get_Download_Url_Domain
 Check_Arch
 
 # Step 2: Install Depends
-Update_Package_Resource
+# Update_Package_Resource
 Install_Depends
 Check_Dependency_Installation
 
