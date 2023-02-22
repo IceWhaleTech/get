@@ -200,11 +200,11 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.4.2-alpha1/linux-${TARGET_ARCH}-casaos-gateway-v0.4.2-alpha1.tar.gz"
+        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-gateway-v0.4.2.tar.gz"
 "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-MessageBus/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-message-bus-v0.4.2.tar.gz"
 "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-user-service-v0.4.2.tar.gz"
 "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-local-storage-v0.4.2.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-app-management-v0.4.2.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.2-hotfix1/linux-${TARGET_ARCH}-casaos-app-management-v0.4.2-hotfix1.tar.gz"
 "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-v0.4.2.tar.gz"
 "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-CLI/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-cli-v0.4.2.tar.gz"
 "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.4.2/linux-all-casaos-v0.4.2.tar.gz" 
@@ -327,15 +327,20 @@ Check_Dependency_Installation() {
 
 #Install Rclone
 Install_Rclone() {
-	Show 2 "Install the necessary dependencies: \e[33mRclone \e[0m"
-    GreyStart
-    ${sudo_cmd} curl https://rclone.org/install.sh | ${sudo_cmd} bash || echo ""
-    ColorReset
-    if [[ $? -ne 0 ]]; then
+	Show 2 "Install the necessary dependencies: Rclone"
+	if [[ -x "$(command -v rclone)" ]]; then
+        rclone_path=$(command -v rclone)
+        ${sudo_cmd} rm -rf $rclone_path
+    fi
+    
+    if [[ -f "${PREFIX}/usr/share/man/man1/rclone.1.gz" ]]; then
+        ${sudo_cmd} rm -rf "${PREFIX}/usr/share/man/man1/rclone.1.gz"
+    fi
+    
+    ${sudo_cmd} curl https://rclone.org/install.sh | ${sudo_cmd} bash || {
         Show 1 "Installation failed, please try again."
         exit 1
-    fi
-    ${sudo_cmd} systemctl enable rclone.service
+    }
 }
 
 
@@ -506,7 +511,7 @@ Get_Download_Url_Domain
 Check_Arch
 
 # Step 2: Install Depends
-# Update_Package_Resource
+Update_Package_Resource
 Install_Depends
 Check_Dependency_Installation
 
