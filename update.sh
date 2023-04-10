@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 #
-#           CasaOS Update Script v0.4.2#
+#           CasaOS Update Script v0.4.3#
 #   GitHub: https://github.com/IceWhaleTech/CasaOS
 #   Issues: https://github.com/IceWhaleTech/CasaOS/issues
 #   Requires: bash, mv, rm, tr, grep, sed, curl/wget, tar, smartmontools, parted, ntfs-3g, net-tools
@@ -44,8 +44,8 @@ set -e
 source /etc/os-release
 
 # SYSTEM REQUIREMENTS
-readonly CASA_DEPANDS_PACKAGE=('wget' 'curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'udevil' 'samba' 'cifs-utils' 'mergerfs' 'unzip')
-readonly CASA_DEPANDS_COMMAND=('wget' 'curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'udevil' 'samba' 'mount.cifs' 'mount.mergerfs' 'unzip')
+readonly CASA_DEPANDS_PACKAGE=('wget' 'curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'udevil' 'samba' 'cifs-utils' 'mergerfs' 'unzip' 'apparmor')
+readonly CASA_DEPANDS_COMMAND=('wget' 'curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'udevil' 'samba' 'mount.cifs' 'mount.mergerfs' 'unzip' 'apparmor_status')
 
 LSB_DIST=$( ( [ -n "${ID_LIKE}" ] && echo "${ID_LIKE}" ) || ( [ -n "${ID}" ] && echo "${ID}" ) )
 readonly LSB_DIST
@@ -54,12 +54,13 @@ UNAME_M="$(uname -m)"
 readonly UNAME_M
 
 
-readonly CASA_UNINSTALL_URL="https://get.casaos.io/uninstall/v0.4.2"
+readonly CASA_UNINSTALL_URL="https://get.casaos.io/uninstall/v0.4.3"
 readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
 
 # REQUIREMENTS CONF PATH
 # Udevil
 readonly UDEVIL_CONF_PATH=/etc/udevil/udevil.conf
+readonly DEVMON_CONF_PATH=/etc/conf.d/devmon
 
 # COLORS
 readonly COLOUR_RESET='\e[0m'
@@ -203,11 +204,11 @@ Check_Arch() {
         "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-gateway-v0.4.2.tar.gz"
 "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-MessageBus/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-message-bus-v0.4.2.tar.gz"
 "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-user-service-v0.4.2.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-local-storage-v0.4.2.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.2-hotfix1/linux-${TARGET_ARCH}-casaos-app-management-v0.4.2-hotfix1.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-v0.4.2.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-CLI/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-cli-v0.4.2.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.4.2/linux-all-casaos-v0.4.2.tar.gz" 
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.4.3/linux-${TARGET_ARCH}-casaos-local-storage-v0.4.3.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.3/linux-${TARGET_ARCH}-casaos-app-management-v0.4.3.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.4.3/linux-${TARGET_ARCH}-casaos-v0.4.3.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-CLI/releases/download/v0.4.3-alpha2/linux-${TARGET_ARCH}-casaos-cli-v0.4.3-alpha2.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.4.3/linux-all-casaos-v0.4.3.tar.gz" 
     )
 }
 
@@ -326,21 +327,44 @@ Check_Dependency_Installation() {
 }
 
 #Install Rclone
+Install_rclone_from_source() {
+  ${sudo_cmd} wget -qO ./install.sh https://rclone.org/install.sh
+  if [[ "${REGION}" = "China" ]] || [[ "${REGION}" = "CN" ]]; then
+    sed -i 's/downloads.rclone.org/casaos.oss-cn-shanghai.aliyuncs.com/g' ./install.sh
+  else
+    sed -i 's/downloads.rclone.org/get.casaos.io/g' ./install.sh
+  fi
+  ${sudo_cmd} chmod +x ./install.sh
+  ${sudo_cmd} ./install.sh || {
+    Show 1 "Installation failed, please try again."
+    ${sudo_cmd} rm -rf install.sh
+    exit 1
+  }
+  ${sudo_cmd} rm -rf install.sh
+  Show 0 "Rclone v1.61.1 installed successfully."
+}
+
 Install_Rclone() {
-	Show 2 "Install the necessary dependencies: Rclone"
-	if [[ -x "$(command -v rclone)" ]]; then
-        rclone_path=$(command -v rclone)
-        ${sudo_cmd} rm -rf $rclone_path
+  Show 2 "Install the necessary dependencies: Rclone"
+  if [[ -x "$(command -v rclone)" ]]; then
+    version=$(rclone --version 2>>errors | head -n 1)
+    target_version="rclone v1.61.1"
+    rclone1="${PREFIX}/usr/share/man/man1/rclone.1.gz"
+    if [ "$version" != "$target_version" ]; then
+      Show 3 "Will change rclone from $version to $target_version."
+      rclone_path=$(command -v rclone)
+      ${sudo_cmd} rm -rf "${rclone_path}"
+      if [[ -f "$rclone1" ]]; then
+        ${sudo_cmd} rm -rf "$rclone1"
+      fi
+      Install_rclone_from_source
+    else
+      Show 2 "Target version already installed."
     fi
-    
-    if [[ -f "${PREFIX}/usr/share/man/man1/rclone.1.gz" ]]; then
-        ${sudo_cmd} rm -rf "${PREFIX}/usr/share/man/man1/rclone.1.gz"
-    fi
-    
-    ${sudo_cmd} curl https://rclone.org/install.sh | ${sudo_cmd} bash || {
-        Show 1 "Installation failed, please try again."
-        exit 1
-    }
+  else
+    Install_rclone_from_source
+  fi
+  ${sudo_cmd} systemctl enable rclone || Show 3 "Service rclone does not exist."
 }
 
 
@@ -363,6 +387,9 @@ Configuration_Addons() {
         #shellcheck disable=SC2016
         ${sudo_cmd} sed -i 's/allowed_media_dirs = \/DATA, \/DATA\/$USER/allowed_media_dirs = \/media, \/media\/$USER, \/run\/media\/$USER/g' "${PREFIX}${UDEVIL_CONF_PATH}"
         ${sudo_cmd} sed -i '/exfat/s/, nonempty//g' "$PREFIX"${UDEVIL_CONF_PATH}
+        ${sudo_cmd} sed -i '/default_options/s/, noexec//g' "$PREFIX"${UDEVIL_CONF_PATH}
+        ${sudo_cmd} sed -i '/^ARGS/cARGS="--mount-options nosuid,nodev,noatime --ignore-label EFI"' "$PREFIX"${DEVMON_CONF_PATH}
+        
         # GreyStart
         # Add a devmon user
         USERNAME=devmon
@@ -511,7 +538,7 @@ Get_Download_Url_Domain
 Check_Arch
 
 # Step 2: Install Depends
-# Update_Package_Resource
+Update_Package_Resource
 Install_Depends
 Check_Dependency_Installation
 
