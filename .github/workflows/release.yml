@@ -24,10 +24,10 @@ jobs:
           MAIN_TAG=${{ steps.get_tag.outputs.tag }}
           echo "Main tag: $MAIN_TAG"
 
+          source ./casaos-release
+
           mkdir packages
           pushd packages
-
-          source ./casaos-release
 
           # List of architectures
           TARGET_ARCH_LIST=("amd64" "arm-7" "arm64")
