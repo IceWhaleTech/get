@@ -50,8 +50,8 @@ jobs:
               wget $URL
             done
 
-            tar zcvf casaos-${TARGET_ARCH}-${MAIN_TAG}.tar.gz linux-*.tar.gz
-            sha256sum casaos-${TARGET_ARCH}-${MAIN_TAG}.tar.gz >> checksum.txt
+            tar zcvf casaos-all-${TARGET_ARCH}-${MAIN_TAG}.tar.gz linux-*.tar.gz
+            sha256sum casaos-all-${TARGET_ARCH}-${MAIN_TAG}.tar.gz >> checksum.txt
             rm linux-*.tar.gz
           done
 
@@ -59,7 +59,7 @@ jobs:
         if: steps.package.outcome == 'success'
         with:
           files: |
-            /tmp/packages/casaos-*.tar.gz
+            /tmp/packages/casaos-all-*.tar.gz
             /tmp/packages/checksum.txt
           draft: true
           prerelease: true
