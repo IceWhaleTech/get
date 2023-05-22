@@ -20,14 +20,15 @@ jobs:
         run: echo tag=${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT
 
       - name: Download and consolidate packages
+        id: package
         run: |
           MAIN_TAG=${{ steps.get_tag.outputs.tag }}
           echo "Main tag: $MAIN_TAG"
 
           source ./casaos-release
 
-          mkdir packages
-          pushd packages
+          mkdir /tmp/packages
+          pushd /tmp/packages
 
           # List of architectures
           TARGET_ARCH_LIST=("amd64" "arm-7" "arm64")
@@ -53,8 +54,10 @@ jobs:
             rm linux-*.tar.gz
           done
 
-      - name: Upload package
-        uses: actions/upload-artifact@v2
+      - uses: softprops/action-gh-release@v1
+        if: steps.package.outcome == 'success'
         with:
-          name: casaos-${{ steps.get_tag.outputs.tag }}
-          path: packages/casaos-*.tar.gz
+          files: /tmp/packages/casaos-*.tar.gz
+          draft: true
+          prerelease: true
+          fail_on_unmatched_files: true
