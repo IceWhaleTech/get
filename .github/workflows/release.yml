@@ -11,7 +11,9 @@ jobs:
     steps:
 
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Get the main tag
         id: get_tag
@@ -25,7 +27,7 @@ jobs:
           mkdir packages
           pushd packages
 
-          source casaos-release
+          source ./casaos-release
 
           # List of architectures
           TARGET_ARCH_LIST=("amd64" "arm-7" "arm64")
