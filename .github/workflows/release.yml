@@ -15,7 +15,7 @@ jobs:
 
       - name: Get the main tag
         id: get_tag
-        run: echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
+        run: echo tag=${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT
 
       - name: Download and consolidate packages
         run: |
