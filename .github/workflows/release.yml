@@ -1,0 +1,58 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get the main tag
+        id: get_tag
+        run: echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
+
+      - name: Download and consolidate packages
+        run: |
+          MAIN_TAG=${{ steps.get_tag.outputs.tag }}
+          echo "Main tag: $MAIN_TAG"
+
+          mkdir packages
+          pushd packages
+
+          source casaos-release
+
+          # List of architectures
+          TARGET_ARCH_LIST=("amd64" "arm-7" "arm64")
+          for TARGET_ARCH in ${TARGET_ARCH_LIST[@]}; do
+            echo "Downloading packages for $TARGET_ARCH"
+            URLS=(
+                "https://github.com/IceWhaleTech/CasaOS-AppManagement/releases/download/${CASAOS_APP_MANAGEMENT_TAG}/linux-${TARGET_ARCH}-casaos-app-management-${CASAOS_APP_MANAGEMENT_TAG}.tar.gz"
+                "https://github.com/IceWhaleTech/CasaOS-AppStore/releases/download/${CASAOS_APP_STORE_TAG}/linux-all-appstore-${CASAOS_APP_STORE_TAG}.tar.gz"
+                "https://github.com/IceWhaleTech/CasaOS-CLI/releases/download/${CASAOS_CLI_TAG}/linux-${TARGET_ARCH}-casaos-cli-${CASAOS_CLI_TAG}.tar.gz"
+                "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/${CASAOS_GATEWAY_TAG}/linux-${TARGET_ARCH}-casaos-gateway-${CASAOS_GATEWAY_TAG}.tar.gz"
+                "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/${CASAOS_LOCAL_STORAGE_TAG}/linux-${TARGET_ARCH}-casaos-local-storage-${CASAOS_LOCAL_STORAGE_TAG}.tar.gz"
+                "https://github.com/IceWhaleTech/CasaOS-UI/releases/download/${CASAOS_UI_TAG}/linux-all-casaos-${CASAOS_UI_TAG}.tar.gz"
+                "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/${CASAOS_USER_SERVICE_TAG}/linux-${TARGET_ARCH}-casaos-user-service-${CASAOS_USER_SERVICE_TAG}.tar.gz"
+                "https://github.com/IceWhaleTech/CasaOS/releases/download/${CASAOS_TAG}/linux-${TARGET_ARCH}-casaos-${CASAOS_TAG}.tar.gz"
+            )
+
+            for URL in ${URLS[@]}; do
+              echo "Downloading $URL"
+              wget $URL
+            done
+
+            tar zcvf casaos-${TARGET_ARCH}-${MAIN_TAG}.tar.gz linux-*.tar.gz
+            rm linux-*.tar.gz
+          done
+
+      - name: Upload package
+        uses: actions/upload-artifact@v2
+        with:
+          name: casaos-${{ steps.get_tag.outputs.tag }}
+          path: packages/casaos-*.tar.gz
