@@ -25,7 +25,7 @@ jobs:
           MAIN_TAG=${{ steps.get_tag.outputs.tag }}
           echo "Main tag: $MAIN_TAG"
 
-          source ./casaos-release
+          source ./casaos-tags
 
           mkdir /tmp/packages
           pushd /tmp/packages
