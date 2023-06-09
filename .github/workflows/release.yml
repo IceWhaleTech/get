@@ -40,6 +40,7 @@ jobs:
                 "https://github.com/IceWhaleTech/CasaOS-CLI/releases/download/${CASAOS_CLI_TAG}/linux-${TARGET_ARCH}-casaos-cli-${CASAOS_CLI_TAG}.tar.gz"
                 "https://github.com/IceWhaleTech/CasaOS-Gateway/releases/download/${CASAOS_GATEWAY_TAG}/linux-${TARGET_ARCH}-casaos-gateway-${CASAOS_GATEWAY_TAG}.tar.gz"
                 "https://github.com/IceWhaleTech/CasaOS-LocalStorage/releases/download/${CASAOS_LOCAL_STORAGE_TAG}/linux-${TARGET_ARCH}-casaos-local-storage-${CASAOS_LOCAL_STORAGE_TAG}.tar.gz"
+                "https://github.com/IceWhaleTech/CasaOS-MessageBus/releases/download/${CASAOS_MESSAGE_BUS_TAG}/linux-${TARGET_ARCH}-casaos-message-bus-${CASAOS_MESSAGE_BUS_TAG}.tar.gz"
                 "https://github.com/IceWhaleTech/CasaOS-UI/releases/download/${CASAOS_UI_TAG}/linux-all-casaos-${CASAOS_UI_TAG}.tar.gz"
                 "https://github.com/IceWhaleTech/CasaOS-UserService/releases/download/${CASAOS_USER_SERVICE_TAG}/linux-${TARGET_ARCH}-casaos-user-service-${CASAOS_USER_SERVICE_TAG}.tar.gz"
                 "https://github.com/IceWhaleTech/CasaOS/releases/download/${CASAOS_TAG}/linux-${TARGET_ARCH}-casaos-${CASAOS_TAG}.tar.gz"
