@@ -3,13 +3,12 @@ name: release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
 
 jobs:
   release:
     runs-on: ubuntu-22.04
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v3
         with:
@@ -52,7 +51,7 @@ jobs:
             done
 
             tar zcvf casaos-${TARGET_ARCH}-${MAIN_TAG}.tar.gz linux-*.tar.gz
-            sha256sum casaos-${TARGET_ARCH}-${MAIN_TAG}.tar.gz >> checksum.txt
+            sha256sum casaos-${TARGET_ARCH}-${MAIN_TAG}.tar.gz >> checksums.txt
             rm linux-*.tar.gz
           done
 
@@ -61,7 +60,7 @@ jobs:
         with:
           files: |
             /tmp/packages/casaos-*.tar.gz
-            /tmp/packages/checksum.txt
+            /tmp/packages/checksums.txt
           draft: true
           prerelease: true
           fail_on_unmatched_files: true
