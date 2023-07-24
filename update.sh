@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 #
-#           CasaOS Update Script v0.4.3#
+#           CasaOS Update Script v0.4.4-1#
 #   GitHub: https://github.com/IceWhaleTech/CasaOS
 #   Issues: https://github.com/IceWhaleTech/CasaOS/issues
 #   Requires: bash, mv, rm, tr, grep, sed, curl/wget, tar, smartmontools, parted, ntfs-3g, net-tools
@@ -54,7 +54,7 @@ UNAME_M="$(uname -m)"
 readonly UNAME_M
 
 
-readonly CASA_UNINSTALL_URL="https://get.casaos.io/uninstall/v0.4.3"
+readonly CASA_UNINSTALL_URL="https://get.casaos.io/uninstall/v0.4.4-1"
 readonly CASA_UNINSTALL_PATH=/usr/bin/casaos-uninstall
 
 # REQUIREMENTS CONF PATH
@@ -201,14 +201,15 @@ Check_Arch() {
     esac
     Show 0 "Your hardware architecture is : $UNAME_M"
     CASA_PACKAGES=(
-        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-gateway-v0.4.2.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-MessageBus/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-message-bus-v0.4.2.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.4.2/linux-${TARGET_ARCH}-casaos-user-service-v0.4.2.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.4.3/linux-${TARGET_ARCH}-casaos-local-storage-v0.4.3.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.3/linux-${TARGET_ARCH}-casaos-app-management-v0.4.3.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.4.3/linux-${TARGET_ARCH}-casaos-v0.4.3.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-CLI/releases/download/v0.4.3-alpha2/linux-${TARGET_ARCH}-casaos-cli-v0.4.3-alpha2.tar.gz"
-"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.4.3/linux-all-casaos-v0.4.3.tar.gz" 
+        "${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-Gateway/releases/download/v0.4.4-1/linux-${TARGET_ARCH}-casaos-gateway-v0.4.4-1.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-MessageBus/releases/download/v0.4.4/linux-${TARGET_ARCH}-casaos-message-bus-v0.4.4.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UserService/releases/download/v0.4.4/linux-${TARGET_ARCH}-casaos-user-service-v0.4.4.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-LocalStorage/releases/download/v0.4.4/linux-${TARGET_ARCH}-casaos-local-storage-v0.4.4.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppManagement/releases/download/v0.4.4-1/linux-${TARGET_ARCH}-casaos-app-management-v0.4.4-1.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS/releases/download/v0.4.4/linux-${TARGET_ARCH}-casaos-v0.4.4.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-CLI/releases/download/v0.4.4/linux-${TARGET_ARCH}-casaos-cli-v0.4.4.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-UI/releases/download/v0.4.4-1/linux-all-casaos-v0.4.4-1.tar.gz"
+"${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/CasaOS-AppStore/releases/download/v0.4.4/linux-all-appstore-v0.4.4.tar.gz" 
     )
 }
 
@@ -424,7 +425,7 @@ DownloadAndInstallCasaOS() {
             
         done
 
-        for PACKAGE_FILE in linux-*-casaos-*.tar.gz; do
+        for PACKAGE_FILE in linux-*.tar.gz; do
             Show 2 "Extracting ${PACKAGE_FILE}..."
             ${sudo_cmd} tar zxf "${PACKAGE_FILE}" || Show 1 "Failed to extract package"
         done
@@ -475,6 +476,11 @@ DownloadAndInstallCasaOS() {
         ${sudo_cmd} chmod +x $UI_EVENTS_REG_SCRIPT
     fi
     
+    # Modify app store configuration
+    sed -i "/ServerAPI/d" "$PREFIX/etc/casaos/app-management.conf"
+    sed -i "/ServerApi/d" "$PREFIX/etc/casaos/app-management.conf"
+    sed -i '/appstore/d' "$PREFIX/etc/casaos/app-management.conf"
+    sed -i "/server/aappstore = ${CASA_DOWNLOAD_DOMAIN}IceWhaleTech/_appstore/archive/refs/heads/main.zip" "$PREFIX/etc/casaos/app-management.conf"
     
     #Download Uninstall Script
     if [[ -f ${PREFIX}/tmp/casaos-uninstall ]]; then
