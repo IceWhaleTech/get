@@ -1,17 +1,17 @@
-version: v0.4.4
+version: v0.4.4-1
 release_notes: |
   TOOD: add release notes
 mirrors:
   - http://casaos.io/does/not/exist/test
   - https://github.com/IceWhaleTech
 packages:
-  - path: /get/releases/download/v0.4.4/casaos-amd64-v0.4.4.tar.gz
+  - path: /get/releases/download/v0.4.4-1/casaos-amd64-v0.4.4-1.tar.gz
     architecture: amd64
-  - path: /get/releases/download/v0.4.4/casaos-arm64-v0.4.4.tar.gz
+  - path: /get/releases/download/v0.4.4-1/casaos-arm64-v0.4.4-1.tar.gz
     architecture: arm64
-  - path: /get/releases/download/v0.4.4/casaos-arm-7-v0.4.4.tar.gz
+  - path: /get/releases/download/v0.4.4-1/casaos-arm-7-v0.4.4-1.tar.gz
     architecture: armv7
-checksums: /get/releases/download/v0.4.4/checksums.txt
+checksums: /get/releases/download/v0.4.4-1/checksums.txt
 modules:
   - name: casaos-gateway
     short: gateway
