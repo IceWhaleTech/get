@@ -17,11 +17,11 @@ modules:
     short: gateway
   - name: casaos-user-service
     short: user-service
+  - name: casaos-message-bus
+    short: message-bus
   - name: casaos
     short: casaos
   - name: casaos-local-storage
     short: local-storage
-  - name: casaos-message-bus
-    short: message-bus
   - name: casaos-app-management
     short: app-management
