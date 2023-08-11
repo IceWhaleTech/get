@@ -2,14 +2,15 @@ version: v0.4.4-1
 release_notes: |
   TOOD: add release notes
 mirrors:
+  - https://github.com/raller1028
   - http://casaos.io/does/not/exist/test
   - https://github.com/IceWhaleTech
 packages:
-  - path: /get/releases/download/v0.4.4-1/casaos-amd64-v0.4.4-1.tar.gz
+  - path: /test_rauc/releases/download/v0.1/casaos_zimacube-0.4.4.raucb
     architecture: amd64
-  - path: /get/releases/download/v0.4.4-1/casaos-arm64-v0.4.4-1.tar.gz
+  - path: /test_rauc/releases/download/v0.1/casaos_zimacube-0.4.4.raucb
     architecture: arm64
-  - path: /get/releases/download/v0.4.4-1/casaos-arm-7-v0.4.4-1.tar.gz
+  - path: /test_rauc/releases/download/v0.1/casaos_zimacube-0.4.4.raucb
     architecture: armv7
 checksums: /get/releases/download/v0.4.4-1/checksums.txt
 modules:
@@ -17,11 +18,11 @@ modules:
     short: gateway
   - name: casaos-user-service
     short: user-service
+  - name: casaos-message-bus
+    short: message-bus
   - name: casaos
     short: casaos
   - name: casaos-local-storage
     short: local-storage
-  - name: casaos-message-bus
-    short: message-bus
   - name: casaos-app-management
     short: app-management
