@@ -1,4 +1,4 @@
-version: v0.4.4-1
+version: v0.4.8
 release_notes: |
   ## [0.4.3] \n Added • [Disk] Now usb also supports merging to Changed\n • [File] Solve the installation dependency problem, make the installation more smoothly\n • [File] Change the default permissions of the sharing folder Fixed\n • [System] Fixed not see wlan iface (#909)\n • [System] Terminal font issue fix (#929)\n •[File] Fixed the problem of not being able to launch after mounting
 mirrors:
