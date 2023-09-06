@@ -6,11 +6,11 @@ mirrors:
   - http://casaos.io/does/not/exist/test
   - https://github.com/IceWhaleTech
 packages:
-  - path: /test_rauc/releases/download/v0.4.4-1/casaos_ova-0.4.4-1.tar.gz
+  - path: /test_rauc/releases/download/v0.4.4-1/casaos_ova-0.4.4-1.tar
     architecture: amd64
-  - path: /test_rauc/releases/download/v0.4.4-1/casaos_ova-0.4.4-1.tar.gz
+  - path: /test_rauc/releases/download/v0.4.4-1/casaos_ova-0.4.4-1.tar
     architecture: arm64
-  - path: /test_rauc/releases/download/v0.4.4-1/casaos_ova-0.4.4-1.tar.gz
+  - path: /test_rauc/releases/download/v0.4.4-1/casaos_ova-0.4.4-1.tar
     architecture: armv7
 checksums: /get/releases/download/v0.4.4-1/checksums.txt
 modules:
