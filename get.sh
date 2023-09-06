@@ -50,7 +50,7 @@ readonly TITLE="CasaOS Installer"
 # SYSTEM REQUIREMENTS
 readonly MINIMUM_DISK_SIZE_GB="5"
 readonly MINIMUM_MEMORY="400"
-readonly MINIMUM_DOCER_VERSION="20"
+readonly MINIMUM_DOCKER_VERSION="20"
 readonly CASA_DEPANDS_PACKAGE=('curl' 'smartmontools' 'parted' 'ntfs-3g' 'net-tools' 'whiptail' 'udevil' 'samba' 'cifs-utils')
 readonly CASA_DEPANDS_COMMAND=('curl' 'smartctl' 'parted' 'ntfs-3g' 'netstat' 'whiptail' 'udevil' 'samba' 'mount.cifs')
 
@@ -386,11 +386,11 @@ Check_Docker_Install() {
         Docker_Version=$(${sudo_cmd} docker version --format '{{.Server.Version}}')
         if [[ $? -ne 0 ]]; then
             Install_Docker
-        elif [[ ${Docker_Version:0:2} -lt "${MINIMUM_DOCER_VERSION}" ]]; then
-            Show 1 "Recommended minimum Docker version is \e[33m${MINIMUM_DOCER_VERSION}.xx.xx\e[0m,\Current Docker verison is \e[33m${Docker_Version}\e[0m,\nPlease uninstall current Docker and rerun the CasaOS installation script."
+        elif [[ ${Docker_Version:0:2} -lt "${MINIMUM_DOCKER_VERSION}" ]]; then
+            Show 1 "Recommended minimum Docker version is \e[33m${MINIMUM_DOCKER_VERSION}.xx.xx\e[0m,\Current Docker version is \e[33m${Docker_Version}\e[0m,\nPlease uninstall current Docker and rerun the CasaOS installation script."
             exit 1
         else
-            Show 0 "Current Docker verison is ${Docker_Version}."
+            Show 0 "Current Docker version is ${Docker_Version}."
         fi
     else
         Install_Docker
@@ -403,11 +403,11 @@ Check_Docker_Install_Final() {
         Docker_Version=$(${sudo_cmd} docker version --format '{{.Server.Version}}')
         if [[ $? -ne 0 ]]; then
             Install_Docker
-        elif [[ ${Docker_Version:0:2} -lt "${MINIMUM_DOCER_VERSION}" ]]; then
-            Show 1 "Recommended minimum Docker version is \e[33m${MINIMUM_DOCER_VERSION}.xx.xx\e[0m,\Current Docker verison is \e[33m${Docker_Version}\e[0m,\nPlease uninstall current Docker and rerun the CasaOS installation script."
+        elif [[ ${Docker_Version:0:2} -lt "${MINIMUM_DOCKER_VERSION}" ]]; then
+            Show 1 "Recommended minimum Docker version is \e[33m${MINIMUM_DOCKER_VERSION}.xx.xx\e[0m,\Current Docker version is \e[33m${Docker_Version}\e[0m,\nPlease uninstall current Docker and rerun the CasaOS installation script."
             exit 1
         else
-            Show 0 "Current Docker verison is ${Docker_Version}."
+            Show 0 "Current Docker version is ${Docker_Version}."
             Check_Docker_Running
         fi
     else
