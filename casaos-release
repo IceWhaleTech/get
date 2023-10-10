@@ -1,16 +1,15 @@
-version: v0.4.8
+version: v0.5.0.1
 release_notes: |
-  # [0.4.4.1]\n\n**Attention**\n\n* **Significant changes to the App Store in this version!**\n* **Installed apps will need to be rebuilt after the upgrade.**\n\n**New in Appstore**\n\n* The App Store has been fully upgraded with the addition of 30+ new applications, including support for Docker-compose apps.\n  * New apps: Adminer, Alist, ChatbotUI, Cloudflared, Databag, EmulatorJS, Handbrake, MariaDB, Memos, MineOS, Mongo, MongoDB4, Overseerr, Petio, PostgreSQL, Resilio-sync, Snapdrop, Stash.\n* You can add third-party app sources from [https://awesome.casaos.io/](https://awesome.casaos.io/) , offering thousands of applications to choose from.\n* Migrated from Docker-cli to Docker-compose.\n* Added support for multiple languages in the App Store.\n* Added author type filters to the App Store.\n* Supports assigning multiple apps to the same network.\n* Added management of global environment variables, allowing injection of arbitrary environment variables into all CasaOS applications, such as OPENAI_API_KEY.\n* Added relevant subcommands for managing global environment variables.\n* Synchronized application list to the local system, providing more stability.\n* Potential issues (if concerned, please hold off on upgrading):\n  * Removed the feature of randomly assigning ports when there is a port conflict in apps.\n  * Removed the sorting function for apps in the App Store.\n  * Removed the apps cloning function.\n\n**Added**\n\n* Added tips feature to the app，allowing users to save passwords or ferret out default passwords in the tips.\n* Clicking on the time, switching between 12-hour and 24-hour formats.\n* Clicking on the CPU temperature, switching between Fahrenheit and Celsius.\n* Added the functionality to download system logs.\n* Added the file editor performs syntax checking for the following file formats: JavaScript, CSS, HTML, JSON, YAML.\n\n**Security Advisories (fixed)**\n\n* CVE-2023-37265: Incorrect identification of the source IP address.\n* CVE-2023-37266: Weak JWT secret.\n* Fixed a security vulnerability (credits: @thomas-chauchefoin-sonarsource @CorrectRoadH).\n* Optimized some styles and aesthetics.\n\n**Fixed**\n\n* Fixed sorting and other issues in the file list.\n* Fixed the issue of incorrect paths when downloading multiple files.\n* Fixed the forced JSON formatting behavior of the editor when saving files.\n* Faster speed for app update checks.\n* Adjusted fonts on the log, console, and other pages to match the native console.\n* Merged the \"Exited Applications\" panel into the application list.\n* Fixed the mounting issue when there are no partitions on the disk.\n* Changed the synchronization method , used socketIO communication throughout the application lifecycle.
+  # [0.5.0.1] Online Update
 mirrors:
-  - https://github.com/raller1028
-  - http://casaos.io/does/not/exist/test
   - https://github.com/IceWhaleTech
+  - https://casaos.oss-cn-shanghai.aliyuncs.com/IceWhaleTech
 packages:
-  - path: /test_rauc/releases/download/v0.4.8_rally_test/casaos_zimacube-0.4.4.tar
+  - path: /zimaos-rauc/releases/download/0.4.8.1/zimaos_zimacube-0.4.8.tar
     architecture: amd64
-  - path: /test_rauc/releases/download/v0.4.8_rally_test/casaos_zimacube-0.4.4.tar
+  - path: /IceWhaleTech/zimaos-rauc/releases/download/0.4.8.1/zimaos_zimacube-0.4.8.tar
     architecture: arm64
-  - path: /test_rauc/releases/download/v0.4.8_rally_test/casaos_zimacube-0.4.4.tar
+  - path: /IceWhaleTech/zimaos-rauc/releases/download/0.4.8.1/zimaos_zimacube-0.4.8.tar
     architecture: armv7
 checksums: /get/releases/download/v0.4.4-1/checksums.txt
 modules:
