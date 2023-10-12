@@ -1,18 +1,12 @@
-version: v0.4.4-1
+version: v0.5.0
 release_notes: |
-  ## [0.4.3] \n Added • [Disk] Now usb also supports merging to Changed\n • [File] Solve the installation dependency problem, make the installation more smoothly\n • [File] Change the default permissions of the sharing folder Fixed\n • [System] Fixed not see wlan iface (#909)\n • [System] Terminal font issue fix (#929)\n •[File] Fixed the problem of not being able to launch after mounting
+  # private test
 mirrors:
   - https://github.com/raller1028
-  - http://casaos.io/does/not/exist/test
-  - https://github.com/IceWhaleTech
 packages:
-  - path: /test_rauc/releases/download/v0.4.4-1/casaos_ova-0.4.4-1.tar
+  - path: /test_rauc/releases/download/v0.5.0/zimaos_zimacube-0.5.0.raucb
     architecture: amd64
-  - path: /test_rauc/releases/download/v0.4.4-1/casaos_ova-0.4.4-1.tar
-    architecture: arm64
-  - path: /test_rauc/releases/download/v0.4.4-1/casaos_ova-0.4.4-1.tar
-    architecture: armv7
-checksums: /get/releases/download/v0.4.4-1/checksums.txt
+checksums: /get/releases/download/v0.5.0/checksums.txt
 modules:
   - name: casaos-gateway
     short: gateway
