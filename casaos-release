@@ -1,4 +1,6 @@
-version: v0.4.4-1
+version: v1.1.0
+code: Super Man
+background: https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Central_Californian_Coastline%2C_Big_Sur_-_May_2013.jpg/1200px-Central_Californian_Coastline%2C_Big_Sur_-_May_2013.jpg
 release_notes: |
   ## [0.4.3] \n Added • [Disk] Now usb also supports merging to Changed\n • [File] Solve the installation dependency problem, make the installation more smoothly\n • [File] Change the default permissions of the sharing folder Fixed\n • [System] Fixed not see wlan iface (#909)\n • [System] Terminal font issue fix (#929)\n •[File] Fixed the problem of not being able to launch after mounting
 mirrors:
