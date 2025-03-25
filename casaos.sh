@@ -230,6 +230,9 @@ Check_Arch() {
     *aarch64*)
         Target_Arch="arm64"
         ;;
+    *riscv64*)
+        Target_Arch="riscv64"
+        ;;
     *64*)
         Target_Arch="amd64"
         ;;
